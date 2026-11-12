@@ -103,10 +103,30 @@ export function methodLabel(m: string): string {
   return METHODS.find((x) => x.value === m)?.label ?? m;
 }
 
+export const CUSTOMER_TYPES = [
+  { value: 'store', label: 'Medical store', plural: 'Medical stores' },
+  { value: 'distributor', label: 'Distributor', plural: 'Distributors' },
+  { value: 'wholesaler', label: 'Wholesaler', plural: 'Wholesalers' },
+  { value: 'retailer', label: 'Retailer', plural: 'Retailers' },
+  { value: 'clinic', label: 'Clinic', plural: 'Clinics' },
+  { value: 'hospital', label: 'Hospital', plural: 'Hospitals' },
+] as const;
+
+export type CustomerType = (typeof CUSTOMER_TYPES)[number]['value'];
+
+export function customerTypeLabel(t: string | null | undefined): string {
+  return CUSTOMER_TYPES.find((x) => x.value === t)?.label ?? 'Customer';
+}
+
+/** The login role for a customer of this type. */
+export function loginRoleFor(t: string): 'distributor' | 'store' {
+  return t === 'distributor' ? 'distributor' : 'store';
+}
+
 export const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
   order_taker: 'Order Taker',
-  store: 'Medical Store',
+  store: 'Customer',
   distributor: 'Distributor',
 };
 

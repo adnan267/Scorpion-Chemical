@@ -51,7 +51,9 @@ export default function More() {
 
       {admin ? (
         <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <MenuRow icon="storefront-outline" label="Customers" sub="Medical stores and distributors, discounts, statements" onPress={() => router.push('/customers')} />
+          <MenuRow icon="storefront-outline" label="Customers" sub="Stores, distributors, clinics and others; discounts, statements" onPress={() => router.push('/customers')} />
+          <Line />
+          <MenuRow icon="map-outline" label="Live map" sub="Where order takers are now, and their routes" onPress={() => router.push('/team-map')} />
           <Line />
           <MenuRow icon="people-outline" label="Staff logins" sub="Order takers and admins" onPress={() => router.push('/users')} />
           <Line />

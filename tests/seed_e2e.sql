@@ -62,4 +62,15 @@ select public.payment_submit(:'cb', 1500, 'cash')->>'id' as p4 \gset
 select pg_temp.login(:'admin');
 select public.payment_review(:'p1', true, 'Received in HBL account');
 select app.run_due_reminders();
+-- live location demo: Bilal on duty with a morning route across Multan; a second taker off duty
+select pg_temp.mk('03022222222', 'usman123') as taker2 \gset
+select public.service_create_profile(:'taker2', 'order_taker', 'Usman Tariq', '03022222222');
+insert into duty_sessions(user_id, started_at) values (:'taker', now() - interval '3 hours');
+insert into location_points(user_id, session_id, lat, lng, accuracy, recorded_at)
+select :'taker', (select id from duty_sessions where user_id = :'taker'),
+       30.1575 + g * 0.0011, 71.4440 + g * 0.0009 + sin(g / 4.0) * 0.002, 12,
+       now() - interval '3 hours' + (g * interval '4 minutes')
+  from generate_series(0, 44) g;
+insert into duty_sessions(user_id, started_at, ended_at) values (:'taker2', now() - interval '26 hours', now() - interval '18 hours');
+insert into location_points(user_id, lat, lng, accuracy, recorded_at) values (:'taker2', 30.2140, 71.4880, 20, now() - interval '18 hours');
 select 'seeded';

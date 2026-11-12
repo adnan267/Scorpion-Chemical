@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 
-import { fmtDate, methodLabel, money, ROLE_LABEL } from '@/lib/format';
+import { customerTypeLabel, fmtDate, methodLabel, money, ROLE_LABEL } from '@/lib/format';
 import type { Customer, OrderRow, PaymentRow } from '@/lib/types';
 import { productImageUrl } from '@/lib/upload';
 
@@ -75,7 +75,7 @@ export function CustomerCard({ c, onPress }: { c: Customer; onPress: () => void 
         <View style={{ flex: 1, gap: 2 }}>
           <T v="strong" numberOfLines={1}>{c.name}</T>
           <T v="small" numberOfLines={1}>
-            {c.type === 'distributor' ? 'Distributor' : 'Medical store'}
+            {customerTypeLabel(c.type)}
             {c.city ? `, ${c.city}` : ''}
           </T>
           {!c.is_active ? <Tag label="Inactive" tone="gray" /> : null}

@@ -2,14 +2,14 @@
   "expo": {
     "name": "Scorpion Chemical",
     "slug": "scorpion-chemical",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "scorpion",
     "userInterfaceStyle": "light",
     "android": {
       "package": "pk.scorpionchemical.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,7 +39,16 @@
           "cameraPermission": "Allow Scorpion Chemical to take photos of payment receipts."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "locationWhenInUsePermission": "Scorpion Chemical shares your location with the admin while you are on duty."
+        }
+      ],
+      "expo-task-manager"
     ]
   }
 }

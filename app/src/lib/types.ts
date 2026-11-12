@@ -31,7 +31,7 @@ export type Product = {
 
 export type Customer = {
   id: string;
-  type: 'store' | 'distributor';
+  type: string;
   name: string;
   owner_name: string | null;
   phone: string | null;

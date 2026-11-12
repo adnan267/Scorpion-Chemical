@@ -67,8 +67,10 @@ reset role;
 select public.service_create_profile(:'ua', 'store', 'Shifa Owner', '03033333333', :'ca');
 select public.service_create_profile(:'ub', 'store', 'City Owner', '03044444444', :'cb');
 select public.service_create_profile(:'ud', 'distributor', 'Khan Sahib', '03055555555', :'cd');
-select t.raises(format('select public.service_create_profile(%L, %L, %L, %L, %L)', gen_random_uuid(), 'distributor', 'X', '03066666666', :'ca'),
-                'must be linked', 'role must match customer type');
+insert into auth.users(email) values ('mismatch') returning id as mm \gset
+select public.service_create_profile(:'mm', 'distributor', 'X', '03066666666', :'ca');
+select t.eq((select role from profiles where id = :'mm'), 'store', 'login role follows the customer type');
+delete from profiles where id = :'mm';
 
 -- ---------- nobody without a login, and no direct table access ----------
 set role anon;

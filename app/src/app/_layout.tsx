@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '@/ctx/auth';
 import { CartProvider } from '@/ctx/cart';
 import { DialogProvider } from '@/ctx/dialog';
 import { isConfigured } from '@/lib/config';
+import '@/lib/tracking';
 import { LoginScreen, NotConfigured } from '@/ui/Login';
 import { C } from '@/ui/theme';
 

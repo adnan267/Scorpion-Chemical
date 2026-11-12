@@ -4,7 +4,7 @@ import { Linking, Pressable, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
-import { money, num, prettyPhone } from '@/lib/format';
+import { customerTypeLabel, loginRoleFor, money, num, prettyPhone } from '@/lib/format';
 import type { Customer, OrderRow } from '@/lib/types';
 import { Btn, Card, ErrorBox, IconBtn, KV, Line, Loading, Section, T, Tag } from '@/ui/kit';
 import { MenuRow, OrderCard } from '@/ui/rows';
@@ -24,7 +24,7 @@ export default function CustomerScreen() {
   return (
     <Screen
       title={c?.name ?? 'Customer'}
-      subtitle={c ? (c.type === 'distributor' ? 'Distributor' : 'Medical store') : undefined}
+      subtitle={c ? customerTypeLabel(c.type) : undefined}
       back="/customers"
       onRefresh={() => { q.refresh(); orders.reload(); }}
       refreshing={q.refreshing}
@@ -78,7 +78,7 @@ export default function CustomerScreen() {
           </Card>
 
           {admin ? (
-            <Section title="App logins" action={<Pressable hitSlop={8} onPress={() => router.push(`/user/form?role=${c.type}&customer=${id}&name=${name}` as any)}><T v="smallStrong" color={C.blue}>Add login</T></Pressable>}>
+            <Section title="App logins" action={<Pressable hitSlop={8} onPress={() => router.push(`/user/form?role=${loginRoleFor(c.type)}&customer=${id}&name=${name}` as any)}><T v="smallStrong" color={C.blue}>Add login</T></Pressable>}>
               <Card style={{ padding: 0, overflow: 'hidden' }}>
                 {c.logins?.length ? (
                   c.logins.map((u, n) => (

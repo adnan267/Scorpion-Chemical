@@ -36,8 +36,8 @@ export default function Announce() {
         value={audience}
         onChange={setAudience}
         options={[
-          { value: 'all', label: 'Everyone', sub: 'Medical stores, distributors and order takers' },
-          { value: 'store', label: 'Medical stores' },
+          { value: 'all', label: 'Everyone', sub: 'All customers and order takers' },
+          { value: 'store', label: 'Customers except distributors', sub: 'Medical stores, wholesalers, retailers, clinics, hospitals' },
           { value: 'distributor', label: 'Distributors' },
           { value: 'order_taker', label: 'Order takers' },
         ]}

@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import { useMe } from '@/ctx/auth';
 import { useDialog } from '@/ctx/dialog';
 import { rpc, useRpc } from '@/lib/api';
-import { fmtDate, fmtDateTime, isoDate, money, num, prettyPhone, ROLE_LABEL } from '@/lib/format';
+import { customerTypeLabel, fmtDate, fmtDateTime, isoDate, money, num, prettyPhone, ROLE_LABEL } from '@/lib/format';
 import { shareInvoice } from '@/lib/invoice';
 import type { OrderDetail } from '@/lib/types';
 import { Amount, Btn, Card, DateField, ErrorBox, KV, Line, Loading, OrderTag, Section, Sheet, Stepper, T, Tag } from '@/ui/kit';
@@ -116,7 +116,7 @@ export default function OrderScreen() {
               <View style={{ flex: 1 }}>
                 <T v="h2">{o.customer.name}</T>
                 <T v="small">
-                  {o.customer.type === 'distributor' ? 'Distributor' : 'Medical store'}
+                  {customerTypeLabel(o.customer.type)}
                   {o.customer.city ? `, ${o.customer.city}` : ''}
                   {staff && o.customer.phone ? `, ${prettyPhone(o.customer.phone)}` : ''}
                 </T>

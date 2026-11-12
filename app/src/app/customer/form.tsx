@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { useDialog } from '@/ctx/dialog';
 import { adminUsers, rpc, useRpc } from '@/lib/api';
-import { isValidPhone, toNumber } from '@/lib/format';
+import { CUSTOMER_TYPES, customerTypeLabel, isValidPhone, loginRoleFor, toNumber } from '@/lib/format';
 import type { Customer, UserRow } from '@/lib/types';
 import { Btn, Card, ErrorBox, Field, Loading, SelectField, T, Toggle } from '@/ui/kit';
 import { goBack, Screen } from '@/ui/Shell';
@@ -17,7 +17,7 @@ export default function CustomerForm() {
   const existing = useRpc<Customer>('customer_get', { p_id: id }, !!id);
   const takers = useRpc<UserRow[]>('users_list', { p_role: 'order_taker' });
 
-  const [type, setType] = useState<'store' | 'distributor'>('store');
+  const [type, setType] = useState<string>('store');
   const [name, setName] = useState('');
   const [owner, setOwner] = useState('');
   const [phone, setPhone] = useState('');
@@ -80,7 +80,7 @@ export default function CustomerForm() {
       });
       if (wantsLogin) {
         try {
-          await adminUsers({ action: 'create', role: type, full_name: owner.trim() || name.trim(), phone: loginPhone, password: loginPassword, customer_id: newId });
+          await adminUsers({ action: 'create', role: loginRoleFor(type), full_name: owner.trim() || name.trim(), phone: loginPhone, password: loginPassword, customer_id: newId });
         } catch (e: any) {
           dialog.toast(`Customer saved, but the login was not created: ${e.message}`, 'error');
           router.replace(`/customer/${newId}` as any);
@@ -108,18 +108,8 @@ export default function CustomerForm() {
   return (
     <Screen title={id ? 'Edit customer' : 'Add customer'} back="/customers" footer={<Btn title={id ? 'Save changes' : 'Add customer'} onPress={save} loading={busy} />}>
       {existing.error ? <ErrorBox message={existing.error} /> : null}
-      {!id ? (
-        <SelectField
-          label="Type"
-          value={type}
-          onChange={setType}
-          options={[
-            { value: 'store', label: 'Medical store' },
-            { value: 'distributor', label: 'Distributor' },
-          ]}
-        />
-      ) : null}
-      <Field label={type === 'distributor' ? 'Distributor name' : 'Store name'} value={name} onChangeText={setName} />
+      <SelectField label="Type" value={type} onChange={setType} options={CUSTOMER_TYPES.map((t) => ({ value: t.value as string, label: t.label }))} />
+      <Field label={`${customerTypeLabel(type)} name`} value={name} onChangeText={setName} />
       <Field label="Owner name (optional)" value={owner} onChangeText={setOwner} />
       <Field label="Phone (optional)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
       <Field label="Address (optional)" value={address} onChangeText={setAddress} />

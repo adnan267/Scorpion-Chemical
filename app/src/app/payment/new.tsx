@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import { useMe } from '@/ctx/auth';
 import { useDialog } from '@/ctx/dialog';
 import { rpc, useRpc } from '@/lib/api';
-import { isoDate, METHODS, money, toNumber } from '@/lib/format';
+import { customerTypeLabel, isoDate, METHODS, money, toNumber } from '@/lib/format';
 import type { Customer } from '@/lib/types';
 import { pickImage, Picked, uploadProof } from '@/lib/upload';
 import { Btn, Card, DateField, Field, SelectField, T } from '@/ui/kit';
@@ -79,7 +79,7 @@ export default function NewPayment() {
           value={customerId}
           onChange={setCustomerId}
           placeholder={customers.loading ? 'Loading customers...' : 'Choose customer'}
-          options={(customers.data ?? []).map((c) => ({ value: c.id, label: c.name, sub: `${c.type === 'distributor' ? 'Distributor' : 'Medical store'}${c.city ? ', ' + c.city : ''}, balance ${money(c.balance)}` }))}
+          options={(customers.data ?? []).map((c) => ({ value: c.id, label: c.name, sub: `${customerTypeLabel(c.type)}${c.city ? ', ' + c.city : ''}, balance ${money(c.balance)}` }))}
         />
       ) : null}
       <Field label="Amount" prefix="Rs." value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />

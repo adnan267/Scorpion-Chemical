@@ -4,11 +4,13 @@ import { Pressable, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
-import { fmtDate, money, num } from '@/lib/format';
+import { customerTypeLabel, fmtDate, money, num } from '@/lib/format';
 import type { OrderRow, PaymentRow } from '@/lib/types';
 import { Btn, Card, Empty, ErrorBox, Loading, Section, Stat, T } from '@/ui/kit';
 import { OrderCard, PaymentCard } from '@/ui/rows';
+import { DutyCard } from '@/ui/DutyCard';
 import { Screen } from '@/ui/Shell';
+import { liveState, type TeamRow } from './team-map';
 import { C, R, S } from '@/ui/theme';
 
 export default function Home() {
@@ -35,11 +37,13 @@ function AdminHome() {
   const dash = useRpc<any>('dashboard');
   const orders = useRpc<OrderRow[]>('orders_list', { p_status: 'pending', p_limit: 5 });
   const pays = useRpc<PaymentRow[]>('payments_list', { p_status: 'pending', p_limit: 5 });
+  const team = useRpc<TeamRow[]>('team_locations');
   const d = dash.data;
   const refresh = () => {
     dash.refresh();
     orders.reload();
     pays.reload();
+    team.reload();
   };
 
   return (
@@ -56,6 +60,7 @@ function AdminHome() {
             <Stat label="To receive from customers" value={money(d.total_outstanding)} tone="blue" onPress={() => router.push('/customers')} />
             <Stat label="Overdue" value={money(d.overdue_amount)} tone={d.overdue_orders ? 'red' : undefined} sub={`${d.overdue_orders} ${d.overdue_orders === 1 ? 'order' : 'orders'}`} onPress={() => router.push('/orders?status=overdue')} />
             <Stat label="Cash with order takers" value={money(d.cash_with_takers)} onPress={() => router.push('/cash')} />
+            <Stat label="Order takers live" value={team.data ? `${team.data.filter((r) => liveState(r).label === 'Live').length} of ${team.data.length}` : '...'} onPress={() => router.push('/team-map')} />
             <Stat label="Low stock products" value={String(d.low_stock)} tone={d.low_stock ? 'red' : undefined} onPress={() => router.push('/catalog?filter=low')} />
           </Grid>
 
@@ -67,9 +72,6 @@ function AdminHome() {
             {pays.data?.length ? pays.data.map((p) => <PaymentCard key={p.id} p={p} showCustomer />) : <Card><T color={C.sub}>No payments are waiting.</T></Card>}
           </Section>
 
-          <T v="small">
-            {d.stores} medical {d.stores === 1 ? 'store' : 'stores'}, {d.distributors} {d.distributors === 1 ? 'distributor' : 'distributors'}, {d.order_takers} order {d.order_takers === 1 ? 'taker' : 'takers'}
-          </T>
         </>
       ) : null}
     </Screen>
@@ -85,6 +87,7 @@ function TakerHome() {
 
   return (
     <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Order Taker" top onRefresh={() => { dash.refresh(); orders.reload(); }} refreshing={dash.refreshing}>
+      <DutyCard />
       <View style={{ flexDirection: 'row', gap: S.md }}>
         <Btn title="Take an order" icon="cart-outline" onPress={() => router.push('/customers?pick=order')} style={{ flex: 1 }} />
         <Btn title="Record payment" icon="cash-outline" kind="secondary" onPress={() => router.push('/customers?pick=payment')} style={{ flex: 1 }} />
@@ -122,7 +125,7 @@ function CustomerHome() {
   const overdue = Number(d?.overdue_amount ?? 0);
 
   return (
-    <Screen title={me.customer?.name ?? me.full_name} subtitle={me.role === 'distributor' ? 'Distributor' : 'Medical Store'} top onRefresh={() => { dash.refresh(); orders.reload(); }} refreshing={dash.refreshing}>
+    <Screen title={me.customer?.name ?? me.full_name} subtitle={customerTypeLabel(me.customer?.type)} top onRefresh={() => { dash.refresh(); orders.reload(); }} refreshing={dash.refreshing}>
       {dash.error ? <ErrorBox message={dash.error} onRetry={dash.reload} /> : null}
       {!d && dash.loading ? <Loading /> : null}
       {d ? (

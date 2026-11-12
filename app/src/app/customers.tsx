@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 
 import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
+import { CUSTOMER_TYPES } from '@/lib/format';
 import type { Customer } from '@/lib/types';
 import { Btn, Chips, Empty, ErrorBox, IconBtn, Loading, SearchBox } from '@/ui/kit';
 import { CustomerCard } from '@/ui/rows';
@@ -14,7 +15,7 @@ export default function Customers() {
   const params = useLocalSearchParams<{ pick?: string }>();
   const pick = params.pick === 'order' || params.pick === 'payment' ? params.pick : null;
   const [q, setQ] = useState('');
-  const [type, setType] = useState<'all' | 'store' | 'distributor'>('all');
+  const [type, setType] = useState<string>('all');
   const list = useRpc<Customer[]>('customers_list', {});
   const admin = me.role === 'admin';
 
@@ -46,8 +47,7 @@ export default function Customers() {
         onChange={setType}
         options={[
           { value: 'all', label: 'All' },
-          { value: 'store', label: 'Medical stores' },
-          { value: 'distributor', label: 'Distributors' },
+          ...CUSTOMER_TYPES.filter((t) => (list.data ?? []).some((c) => c.type === t.value)).map((t) => ({ value: t.value as string, label: t.plural })),
         ]}
       />
       {list.error ? <ErrorBox message={list.error} onRetry={list.reload} /> : null}

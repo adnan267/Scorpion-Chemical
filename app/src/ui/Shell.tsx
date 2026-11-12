@@ -20,11 +20,12 @@ const PAYMENTS: NavItem = { href: '/payments', label: 'Payments', icon: 'wallet-
 const PRODUCTS: NavItem = { href: '/catalog', label: 'Products', icon: 'cube-outline', iconOn: 'cube' };
 const CUSTOMERS: NavItem = { href: '/customers', label: 'Customers', icon: 'storefront-outline', iconOn: 'storefront' };
 const USERS: NavItem = { href: '/users', label: 'Staff logins', icon: 'people-outline', iconOn: 'people' };
+const MAP: NavItem = { href: '/team-map', label: 'Live map', icon: 'map-outline', iconOn: 'map' };
 const MORE: NavItem = { href: '/more', label: 'More', icon: 'menu-outline', iconOn: 'menu' };
 
 export function navFor(role: Role, wide: boolean): NavItem[] {
   if (role === 'admin') {
-    return wide ? [HOME, ORDERS, PAYMENTS, PRODUCTS, CUSTOMERS, USERS, MORE] : [HOME, ORDERS, PAYMENTS, PRODUCTS, MORE];
+    return wide ? [HOME, ORDERS, PAYMENTS, PRODUCTS, CUSTOMERS, MAP, USERS, MORE] : [HOME, ORDERS, PAYMENTS, PRODUCTS, MORE];
   }
   if (role === 'order_taker') return [HOME, CUSTOMERS, ORDERS, PAYMENTS, MORE];
   return [HOME, PRODUCTS, ORDERS, PAYMENTS, MORE];
