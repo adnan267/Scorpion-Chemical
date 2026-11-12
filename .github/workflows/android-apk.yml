@@ -1,6 +1,7 @@
 # Builds an installable Android APK on every push to main (and on demand from the Actions tab).
-# The result (APK + build log) is published to the `apk-build` branch, and also attached
-# to the run as an artifact.
+# The result (APK + build log) is published to the git ref `refs/apk/latest` (not a branch,
+# so Vercel does not try to deploy it), and also attached to the run as an artifact.
+# Download: git fetch origin refs/apk/latest && git checkout FETCH_HEAD -- .
 # The app settings come from app/.env (publishable key only, safe to commit).
 # Optional repository secret for push notifications: GOOGLE_SERVICES_JSON.
 name: Build Android APK
@@ -49,7 +50,7 @@ jobs:
         with:
           name: scorpion-chemical-apk
           path: app/android/app/build/outputs/apk/release/*.apk
-      - name: Publish result to the apk-build branch
+      - name: Publish result to refs/apk/latest
         if: always()
         run: |
           mkdir -p /tmp/out
@@ -59,7 +60,6 @@ jobs:
           cp app/android/app/build/outputs/apk/release/app-release.apk /tmp/out/scorpion-chemical.apk 2>/dev/null || true
           cd /tmp/out
           git init -q
-          git checkout -q -b apk-build
           git add .
           git -c user.name="apk-builder" -c user.email="apk-builder@users.noreply.github.com" commit -qm "APK build ${GITHUB_RUN_NUMBER}"
-          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" apk-build
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:refs/apk/latest
