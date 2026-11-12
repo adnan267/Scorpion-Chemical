@@ -1,0 +1,46 @@
+# Scorpion Chemical App — Build Status
+
+Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
+
+## Where things stand
+
+- **Database is live** on the owner's new Supabase account (organization "scorpion chemical"), project `scorpion-chemicals`, ref `bmjvyivglnjgofpntqan`, region ap-southeast-1, created 13 Nov 2026. Applied: schema, all server functions, storage buckets and rules, daily reminder job (pg_cron 04:00 UTC), the 19 products, and a search_path fix. Edge function `admin-users` deployed (JWT verification off).
+- Smoke test on the live database (rolled back): store price 54 for Spirit 30 ml at 10% off, order total 540, opening balance 500, 16 products visible, direct table reads refused.
+- A one-time setup code is stored in `app_settings` (key `setup_code`); it is deleted automatically once the first admin is created through First-time setup. The code was given to the owner in chat.
+- App `.env` points at the new project (publishable key). The web build was made but **not deployed**; the Vercel account is still to be confirmed with the owner.
+- **Product photos are not uploaded yet**: the workspace cannot reach supabase.co, so the owner must upload `seed/product-images/seed/*` into bucket `product-images`, folder `seed`.
+- The code is not in a GitHub repository yet. No APK yet.
+- The owner's other Supabase account ("Muhammad Adnan's projects", project `supabase-cerise-helmet`) belongs to other work and must not be used.
+
+## What was built
+
+- One Expo (SDK 58, React Native 0.88, TypeScript) codebase in `app/` for both the Android app and the web panel. All four roles have the same features on both.
+- Database in `supabase/migrations/`: `0001_schema.sql` (tables, all locked with RLS and no policies), `0002_functions.sql` (the whole API as security-definer functions that check the caller's role; internal helpers in schema `app`), `0003_storage.sql` (buckets `product-images` public, `payment-proofs` private), `0004_reminders_schedule.sql` (pg_cron, 04:00 UTC daily).
+- Edge function `admin-users` (create login, set password, change login number, one-time admin bootstrap with a setup code). Deploy with JWT verification off; it authenticates the caller itself.
+- Logins are mobile numbers stored in Supabase Auth as `<number>@login.scorpionchemical.app`. This synthetic-email approach still has to be confirmed against a real Supabase project.
+- Push notifications: app-side token registration and a `send-push` function are written but not enabled (needs Firebase). In-app notifications and due-date reminders work without it.
+- Product list: 16 products from the printed rate list are active. Three are loaded hidden with rate 0 because the rate list gives no net rate: White Phenyl 50 ml (retail Rs. 300 only), White Phenyl 3 litre, White Phenyl Concentrate 100 ml.
+- Logo and icons were cropped from the catalog image; replace when the owner sends the original logo file.
+
+## Decisions made during the build
+
+- App and web panel are the same code (the owner asked for every admin feature in both).
+- Every payment, including cash entered by an order taker, waits for admin approval. Order-taker cash in hand = their unapproved cash entries.
+- Orders are charged to the ledger at Delivered. Payments settle the opening balance and debit adjustments first, then delivered orders oldest first.
+- Batch number and expiry date are recorded on stock entries for reference only.
+- Customers see "in stock / out of stock", not quantities. Order takers and admin see quantities.
+- Order takers see and serve only customers assigned to them.
+
+## Tested
+
+- Server logic: 97 checks on local PostgreSQL 16 (`tests/flow_test.sql`), all passing.
+- Web build clicked through in headless Chrome for all four roles: 51 steps (`tests/run_admin.mjs`, `run_roles.mjs`, `run_more.mjs`, `run_last.mjs`), all passing. These ran against a local stand-in for Supabase (`tests/gateway.mjs`), not a real project.
+
+## Not done yet
+
+1. Owner uploads the 18 product photos; owner creates the admin (0300-7334811) through First-time setup.
+2. Test login, receipt upload and the `admin-users` function end to end on the live project (only the database part has been checked live).
+3. Deploy the web panel (Vercel; which account is still to be confirmed).
+4. GitHub repository, then the APK (GitHub Actions workflow or Expo EAS; both untested) and a test on an Android phone.
+5. Firebase project, then enable push (`supabase/later/0005_push_trigger.sql`).
+6. Net rates for the three White Phenyl products.

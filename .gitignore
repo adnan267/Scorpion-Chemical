@@ -1,0 +1,7 @@
+node_modules/
+app/dist/
+app/.expo/
+app/android/
+app/ios/
+out/
+*.log
