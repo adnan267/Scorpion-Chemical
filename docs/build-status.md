@@ -7,8 +7,9 @@ Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
 - **Database is live** on the owner's new Supabase account (organization "scorpion chemical"), project `scorpion-chemicals`, ref `bmjvyivglnjgofpntqan`, region ap-southeast-1, created 13 Nov 2026. Applied: schema, all server functions, storage buckets and rules, daily reminder job (pg_cron 04:00 UTC), the 19 products, and a search_path fix. Edge function `admin-users` deployed (JWT verification off).
 - Smoke test on the live database (rolled back): store price 54 for Spirit 30 ml at 10% off, order total 540, opening balance 500, 16 products visible, direct table reads refused.
 - A one-time setup code is stored in `app_settings` (key `setup_code`); it is deleted automatically once the first admin is created through First-time setup. The code was given to the owner in chat.
-- App `.env` points at the new project (publishable key). The web build was made but **not deployed**; the Vercel account is still to be confirmed with the owner.
-- **Product photos are not uploaded yet**: the workspace cannot reach supabase.co, so the owner must upload `seed/product-images/seed/*` into bucket `product-images`, folder `seed`.
+- **Web panel is live** at https://scorpion-chemical-app.vercel.app (owner's existing Vercel account, imported from the GitHub repo with root directory `app`; the Vercel connector in chat had no permission to create projects, so the owner imported it).
+- **Admin account created** (0300-7334811) on 13 Nov 2026; setup code used and removed. The admin password was reset once via SQL at the owner's request; owner was advised to change it. Owner confirmed the app runs.
+- Product photos: all 18 uploaded by the owner to bucket `product-images`, folder `seed`, and checked against the products.
 - Code is in the owner's private GitHub repo `adnan267/Scorpion-Chemical` (branch `main`). Every push to `main` that touches `app/` builds an APK on GitHub Actions and publishes it with the build log to branch `apk-build`.
 - First APK built 13 Nov 2026 (run 1, 14 min, 55 MB, arm64-v8a + armeabi-v7a, debug-key signed, package `pk.scorpionchemical.app`) and sent to the owner. Not yet tested on a phone.
 - The owner's other Supabase account ("Muhammad Adnan's projects", project `supabase-cerise-helmet`) belongs to other work and must not be used.
@@ -39,7 +40,6 @@ Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
 
 ## Not done yet
 
-1. Owner uploads the 18 product photos; owner creates the admin (0300-7334811) through First-time setup.
 2. Test login, receipt upload and the `admin-users` function end to end on the live project (only the database part has been checked live).
 3. Deploy the web panel (Vercel; which account is still to be confirmed).
 4. Test the APK on an Android phone (camera, receipt upload, PDF sharing). For a Play Store release later, a proper signing key is needed (current APK uses the debug key).
