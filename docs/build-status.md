@@ -14,6 +14,12 @@ Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
 - First APK built 13 Nov 2026 (run 1, 14 min, 55 MB, arm64-v8a + armeabi-v7a, debug-key signed, package `pk.scorpionchemical.app`) and sent to the owner. Not yet tested on a phone.
 - The owner's other Supabase account ("Muhammad Adnan's projects", project `supabase-cerise-helmet`) belongs to other work and must not be used.
 
+## Added after v1 (13 Nov 2026, app version 1.1.0)
+
+- **Live location of order takers**: order taker taps "Start duty"; the Android app then sends location every ~2 minutes or 30 m (expo-location background updates with a foreground-service notification; works with "while in use" permission, "Allow all the time" is optional). Points are queued on the phone when offline. Nothing is recorded off duty. Admin sees a live map (web and app, Leaflet + OpenStreetMap tiles, bundled Leaflet, refresh every 30 s) and any day's route with distance and orders. Database: `duty_sessions`, `location_points` (migration 0006), cron jobs to keep 90 days and to close duty after 12 hours without location (0008).
+- **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
+- APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
+
 ## What was built
 
 - One Expo (SDK 58, React Native 0.88, TypeScript) codebase in `app/` for both the Android app and the web panel. All four roles have the same features on both.
