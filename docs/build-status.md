@@ -10,7 +10,7 @@ Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
 - **Web panel is live** at https://scorpion-chemical-app.vercel.app (owner's existing Vercel account, imported from the GitHub repo with root directory `app`; the Vercel connector in chat had no permission to create projects, so the owner imported it).
 - **Admin account created** (0300-7334811) on 13 Nov 2026; setup code used and removed. The admin password was reset once via SQL at the owner's request; owner was advised to change it. Owner confirmed the app runs.
 - Product photos: all 18 uploaded by the owner to bucket `product-images`, folder `seed`, and checked against the products.
-- Code is in the owner's private GitHub repo `adnan267/Scorpion-Chemical` (branch `main`). Every push to `main` that touches `app/` builds an APK on GitHub Actions and publishes it with the build log to branch `apk-build`.
+- Code is in the owner's private GitHub repo `adnan267/Scorpion-Chemical` (branch `main`). Every push to `main` that touches `app/` builds an APK on GitHub Actions and publishes it with the build log to the git ref `refs/apk/latest` (not a branch, so Vercel ignores it; fetch with `git fetch origin refs/apk/latest`). The old `apk-build` branch caused failed Vercel preview deployments; the owner was asked to delete it (branch deletion is blocked from the Claude session).
 - First APK built 13 Nov 2026 (run 1, 14 min, 55 MB, arm64-v8a + armeabi-v7a, debug-key signed, package `pk.scorpionchemical.app`) and sent to the owner. Not yet tested on a phone.
 - The owner's other Supabase account ("Muhammad Adnan's projects", project `supabase-cerise-helmet`) belongs to other work and must not be used.
 
