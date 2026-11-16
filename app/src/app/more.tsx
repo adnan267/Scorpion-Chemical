@@ -59,7 +59,7 @@ export default function More() {
           <Line />
           <MenuRow icon="file-tray-full-outline" label="Opening data" sub="Balances, old bills and stock from before the app; Excel import" onPress={() => router.push('/opening' as any)} />
           <Line />
-          <MenuRow icon="people-outline" label="Staff logins" sub="Order takers, stock keepers and admins" onPress={() => router.push('/users')} />
+          <MenuRow icon="people-outline" label="Staff logins" sub="Order takers (route plans), stock keepers and admins" onPress={() => router.push('/users')} />
           <Line />
           <MenuRow icon="cash-outline" label="Cash with order takers" sub="Cash collected but not yet handed over" onPress={() => router.push('/cash')} />
           <Line />
@@ -74,6 +74,8 @@ export default function More() {
       {taker ? (
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           <MenuRow icon="cash-outline" label="Cash in hand" sub="Cash you collected that the admin has not approved yet" onPress={() => router.push('/cash')} />
+          <Line />
+          <MenuRow icon="map-outline" label="My route plan" sub="Which customers to visit on which day" onPress={() => router.push('/route-plan' as any)} />
         </Card>
       ) : null}
 

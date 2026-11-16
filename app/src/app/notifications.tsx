@@ -15,6 +15,8 @@ const ICON: Record<string, IconName> = {
   order: 'receipt-outline',
   payment: 'wallet-outline',
   due: 'alarm-outline',
+  route: 'map-outline',
+  customer: 'storefront-outline',
   stock: 'cube-outline',
   announcement: 'megaphone-outline',
 };
@@ -36,6 +38,8 @@ export default function Notifications() {
     else if (n.ref_type === 'payment' && n.ref_id) router.push(`/payment/${n.ref_id}` as any);
     else if (n.ref_type === 'product' && n.ref_id) router.push(`/product/stock?id=${n.ref_id}` as any);
     else if (n.ref_type === 'ledger') router.push('/ledger' as any);
+    else if (n.ref_type === 'customer' && n.ref_id) router.push(`/customer/${n.ref_id}` as any);
+    else if (n.kind === 'route') router.push('/route-plan' as any);
   }
 
   async function markAll() {

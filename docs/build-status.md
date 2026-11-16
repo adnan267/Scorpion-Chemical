@@ -20,6 +20,18 @@ Last updated: 16 Nov 2026. Scope is in `v1-scope.md`.
 - **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
 - APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
 
+## Version 2.1 (16 Nov 2026, app version 1.3.0, migrations 0010_routes.sql and 0011_route_jobs.sql applied live)
+
+Asked for by the owner after the first phone test (voice notes).
+- **Order takers add customers** themselves (Customers, + button). The customer is theirs straight away, no approval; discount, credit days and opening balance stay 0 until the admin sets them; admins get a "New customer" notification. Order takers can edit details of their own customers. A duplicate name in the same city is refused.
+- **Shop location** on customers: "I am at the shop: save location" on the customer form and page (phone GPS), "Open in Google Maps".
+- **Route plan** per order taker (Staff logins, order taker, Route plan): Day 1 date, number of days (default 30, then it repeats), optional off day (Friday or Sunday; not counted). Each day has an area name and customers in visiting order. Customers with no order taker are given to that order taker when added to a day; another order taker's customers are refused.
+- Order taker Home shows **Today's route** with each customer marked ordered, visited (live location within about 120 m of the saved shop location) or not yet. More, My route plan shows the whole plan.
+- **Tomorrow's route** reminder: in-app notification at 8 pm PKT (pg_cron job `scorpion-route-reminders`), plus a phone notification at 8 pm scheduled on the phone itself whenever the order taker opens Home (works without Firebase).
+- Admin route screen (Live map, order taker) shows the day's plan with visit status and numbered shop pins (green ordered, blue visited, red not visited).
+- Owner's question on 16 Nov: "Take an order" opens the customer list first; tapping the customer opens the products. A hint was added on that screen. Order takers only see customers assigned to them.
+- Tests: 222 database checks (`tests/routes_test.sql` added) and the browser walkthroughs incl. `tests/run_routes.mjs`, all passing locally.
+
 ## Version 2 (16 Nov 2026, app version 1.2.0, migration 0009_v2.sql applied live in 6 parts)
 
 - **Orders**: no Pending or Dispatched any more. An order is Confirmed when placed and its stock is taken then (not enough stock = the order is refused). Admin, the order taker or a stock keeper marks it Delivered. Admin can change quantities until delivery. Old pending orders without stock taken stay "pending" and are treated as to-deliver.

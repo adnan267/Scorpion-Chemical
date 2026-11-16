@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
 import { useDialog } from '@/ctx/dialog';
 import { rpc, useRpc } from '@/lib/api';
 import { customerTypeLabel, fmtDate, loginRoleFor, money, num, prettyPhone, toNumber } from '@/lib/format';
+import { getHere, mapsUrl } from '@/lib/here';
 import type { Customer, OrderRow } from '@/lib/types';
 import { Btn, Card, ErrorBox, IconBtn, KV, Line, Loading, Section, T, Tag } from '@/ui/kit';
 import { MenuRow, OrderCard } from '@/ui/rows';
@@ -22,6 +23,28 @@ export default function CustomerScreen() {
   const bal = Number(c?.balance ?? 0);
   const name = encodeURIComponent(c?.name ?? '');
   const dialog = useDialog();
+  const staff = admin || me.role === 'order_taker';
+  const [locating, setLocating] = useState(false);
+
+  async function saveLocation() {
+    const ok = await dialog.confirm({
+      title: 'Save shop location?',
+      message: c?.lat ? 'This replaces the saved location with where your phone is now. Do this only while you are at the shop.' : 'Your phone\'s current location will be saved as this shop. Do this only while you are at the shop.',
+      confirmLabel: 'Save location',
+    });
+    if (!ok) return;
+    setLocating(true);
+    try {
+      const h = await getHere();
+      await rpc('customer_set_location', { p_customer_id: id, p_lat: h.lat, p_lng: h.lng });
+      dialog.toast(h.accuracy && h.accuracy > 100 ? `Saved, but the location is rough (about ${Math.round(h.accuracy)} m)` : 'Shop location saved');
+      q.reload();
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   async function setOpening() {
     const v = await dialog.ask({
@@ -49,7 +72,7 @@ export default function CustomerScreen() {
       back="/customers"
       onRefresh={() => { q.refresh(); orders.reload(); }}
       refreshing={q.refreshing}
-      right={admin && c ? <IconBtn icon="create-outline" label="Edit customer" onPress={() => router.push(`/customer/form?id=${id}` as any)} /> : undefined}>
+      right={c && (admin || (me.role === 'order_taker' && c.order_taker_id === me.id)) ? <IconBtn icon="create-outline" label="Edit customer" onPress={() => router.push(`/customer/form?id=${id}` as any)} /> : undefined}>
       {q.error ? <ErrorBox message={q.error} onRetry={q.reload} /> : null}
       {q.loading && !c ? <Loading /> : null}
       {c ? (
@@ -92,6 +115,22 @@ export default function CustomerScreen() {
               </>
             ) : null}
           </Card>
+
+          {staff ? (
+            <Card style={{ gap: S.sm }}>
+              <T v="h3">Shop location</T>
+              <T v="small">
+                {c.lat !== null && c.lat !== undefined
+                  ? `Saved${c.location_at ? ` on ${fmtDate(c.location_at)}` : ''}. Used to check route visits.`
+                  : 'Not saved. Save it while standing at the shop, so route visits can be checked.'}
+              </T>
+              {c.route_days?.length ? <T v="small">On the route plan: Day {c.route_days.join(', ')}</T> : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
+                {c.lat !== null && c.lat !== undefined ? <Btn title="Open in Google Maps" icon="map-outline" small kind="secondary" onPress={() => Linking.openURL(mapsUrl(c.lat!, c.lng!))} /> : null}
+                <Btn title={c.lat !== null && c.lat !== undefined ? 'Update location' : 'I am at the shop: save location'} icon="locate-outline" small kind={c.lat !== null && c.lat !== undefined ? 'ghost' : 'secondary'} onPress={saveLocation} loading={locating} />
+              </View>
+            </Card>
+          ) : null}
 
           <Card style={{ padding: 0, overflow: 'hidden' }}>
             <MenuRow icon="document-text-outline" label="Statement" sub="Every order, payment and adjustment" onPress={() => router.push(`/ledger?customer=${id}` as any)} />

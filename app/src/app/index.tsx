@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
 import { customerTypeLabel, fmtDate, isoDate, money, num } from '@/lib/format';
-import type { OrderRow, PaymentRow } from '@/lib/types';
+import { scheduleRouteReminder } from '@/lib/routeReminder';
+import type { OrderRow, PaymentRow, RouteVisits } from '@/lib/types';
 import { Btn, Card, Empty, ErrorBox, Loading, Section, Stat, T } from '@/ui/kit';
 import { OrderCard, PaymentCard } from '@/ui/rows';
 import { DutyCard } from '@/ui/DutyCard';
+import { RouteDay } from '@/ui/RouteToday';
 import { StockSheet } from '@/ui/StockSheet';
 import { Screen } from '@/ui/Shell';
 import { liveState, type TeamRow } from './team-map';
@@ -22,10 +24,10 @@ export default function Home() {
   return <CustomerHome />;
 }
 
-function SeeAll({ href }: { href: string }) {
+function SeeAll({ href, label = 'See all' }: { href: string; label?: string }) {
   return (
     <Pressable onPress={() => router.push(href as any)} hitSlop={8}>
-      <T v="smallStrong" color={C.blue}>See all</T>
+      <T v="smallStrong" color={C.blue}>{label}</T>
     </Pressable>
   );
 }
@@ -100,10 +102,15 @@ function TakerHome() {
   const me = useMe();
   const dash = useRpc<any>('dashboard');
   const orders = useRpc<OrderRow[]>('orders_list', { p_limit: 5 });
+  const route = useRpc<RouteVisits>('route_visits', { p_user_id: null, p_date: null });
   const d = dash.data;
 
+  useEffect(() => {
+    scheduleRouteReminder();
+  }, []);
+
   return (
-    <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Order Taker" top onRefresh={() => { dash.refresh(); orders.reload(); }} refreshing={dash.refreshing}>
+    <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Order Taker" top onRefresh={() => { dash.refresh(); orders.reload(); route.reload(); }} refreshing={dash.refreshing}>
       <DutyCard />
       <View style={{ flexDirection: 'row', gap: S.md }}>
         <Btn title="Take an order" icon="cart-outline" onPress={() => router.push('/customers?pick=order')} style={{ flex: 1 }} />
@@ -118,6 +125,11 @@ function TakerHome() {
           <Stat label="Cash in your hand" value={money(d.cash_in_hand)} tone={Number(d.cash_in_hand) ? 'amber' : undefined} sub="Not yet handed to admin" onPress={() => router.push('/cash')} />
           <Stat label="Your customers owe" value={money(d.customers_outstanding)} sub={`${d.customers} ${d.customers === 1 ? 'customer' : 'customers'}`} onPress={() => router.push('/customers')} />
         </Grid>
+      ) : null}
+      {route.data ? (
+        <Section title="Today's route" action={<SeeAll href="/route-plan" label="Full plan" />}>
+          <RouteDay r={route.data} self />
+        </Section>
       ) : null}
       <Section title="Recent orders" action={<SeeAll href="/orders" />}>
         {orders.data?.length ? (

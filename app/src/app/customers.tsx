@@ -5,7 +5,7 @@ import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
 import { addDays, CUSTOMER_TYPES } from '@/lib/format';
 import type { Customer } from '@/lib/types';
-import { Btn, Chips, Empty, ErrorBox, IconBtn, Loading, SearchBox } from '@/ui/kit';
+import { Btn, Chips, Empty, ErrorBox, IconBtn, Loading, SearchBox, T } from '@/ui/kit';
 import { CustomerCard } from '@/ui/rows';
 import { Screen } from '@/ui/Shell';
 import { C } from '@/ui/theme';
@@ -42,7 +42,8 @@ export default function Customers() {
       back="/"
       onRefresh={list.refresh}
       refreshing={list.refreshing}
-      right={admin && !pick ? <IconBtn icon="add-circle" color={C.blue} label="Add customer" onPress={() => router.push('/customer/form')} /> : undefined}>
+      right={(admin || me.role === 'order_taker') && !pick ? <IconBtn icon="add-circle" color={C.blue} label="Add customer" onPress={() => router.push('/customer/form')} /> : undefined}>
+      {pick === 'order' ? <T color={C.sub}>Tap the customer. Their products and prices open next.</T> : null}
       <SearchBox value={q} onChangeText={setQ} placeholder="Search by name, city or phone" />
       <Chips
         value={type}
@@ -59,8 +60,8 @@ export default function Customers() {
         <Empty
           icon="storefront-outline"
           title={list.data.length === 0 ? 'No customers yet' : 'No customer matches'}
-          hint={list.data.length === 0 ? (admin ? 'Add your medical stores and distributors here.' : 'The admin has not assigned any customers to you yet.') : undefined}
-          action={admin && list.data.length === 0 ? <Btn title="Add customer" icon="add" onPress={() => router.push('/customer/form')} /> : undefined}
+          hint={list.data.length === 0 ? (admin ? 'Add your customers here.' : 'Add a new customer yourself, or ask the admin to give you customers.') : undefined}
+          action={(admin || me.role === 'order_taker') && list.data.length === 0 ? <Btn title="Add customer" icon="add" onPress={() => router.push('/customer/form')} /> : undefined}
         />
       ) : null}
       {items.map((c) => <CustomerCard key={c.id} c={c} onPress={() => open(c)} />)}

@@ -2,9 +2,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
+import { useMe } from '@/ctx/auth';
 import { useDialog } from '@/ctx/dialog';
 import { adminUsers, rpc, useRpc } from '@/lib/api';
 import { CUSTOMER_TYPES, customerTypeLabel, isValidPhone, loginRoleFor, toNumber } from '@/lib/format';
+import { getHere, type Here } from '@/lib/here';
 import type { Customer, UserRow } from '@/lib/types';
 import { Btn, Card, DateField, ErrorBox, Field, Loading, SelectField, T, Toggle } from '@/ui/kit';
 import { goBack, Screen } from '@/ui/Shell';
@@ -15,7 +17,9 @@ export default function CustomerForm() {
   const id = params.id ? String(params.id) : null;
   const dialog = useDialog();
   const existing = useRpc<Customer>('customer_get', { p_id: id }, !!id);
-  const takers = useRpc<UserRow[]>('users_list', { p_role: 'order_taker' });
+  const me = useMe();
+  const admin = me.role === 'admin';
+  const takers = useRpc<UserRow[]>('users_list', { p_role: 'order_taker' }, admin);
 
   const [type, setType] = useState<string>('store');
   const [name, setName] = useState('');
@@ -36,6 +40,21 @@ export default function CustomerForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filled, setFilled] = useState(false);
+  const [here, setHere] = useState<Here | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  async function takeLocation() {
+    setLocating(true);
+    try {
+      const h = await getHere();
+      setHere(h);
+      if (h.accuracy && h.accuracy > 100) dialog.toast(`Location is rough (about ${Math.round(h.accuracy)} m). Step outside and try again for a better fix.`, 'error');
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   useEffect(() => {
     const c = existing.data;
@@ -66,7 +85,7 @@ export default function CustomerForm() {
     if (isNaN(open)) return setError('Opening balance must be a number');
     const days = creditDays.trim() === '' ? null : Number(creditDays.trim());
     if (days !== null && (!Number.isInteger(days) || days < 0 || days > 365)) return setError('Credit days must be a whole number from 0 to 365');
-    const wantsLogin = !id && (loginPhone.trim() !== '' || loginPassword !== '');
+    const wantsLogin = admin && !id && (loginPhone.trim() !== '' || loginPassword !== '');
     if (wantsLogin) {
       if (!isValidPhone(loginPhone)) return setError('Login mobile number should look like 03001234567');
       if (loginPassword.length < 6) return setError('Login password needs at least 6 characters');
@@ -90,6 +109,7 @@ export default function CustomerForm() {
           licence_expiry: licenceExpiry,
           is_active: active,
           opening_balance: id ? null : open,
+          ...(here && !id ? { lat: here.lat, lng: here.lng } : {}),
         },
       });
       if (wantsLogin) {
@@ -128,6 +148,7 @@ export default function CustomerForm() {
       <Field label="Phone (optional)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
       <Field label="Address (optional)" value={address} onChangeText={setAddress} />
       <Field label="City" value={city} onChangeText={setCity} />
+      {admin ? (
       <SelectField
         label="Order taker"
         value={taker}
@@ -135,8 +156,19 @@ export default function CustomerForm() {
         options={[{ value: '', label: 'Not assigned' }, ...(takers.data ?? []).filter((u) => u.is_active || u.id === taker).map((u) => ({ value: u.id, label: u.full_name, sub: `${u.customers_count} customers` }))]}
         hint="Only the assigned order taker can order and collect payment for this customer."
       />
-      <Field label="Default discount" value={discount} onChangeText={setDiscount} keyboardType="decimal-pad" prefix="%" hint="Applies to every product unless you set a product-wise discount." />
-      <Field label="Credit days (optional)" value={creditDays} onChangeText={setCreditDays} keyboardType="number-pad" placeholder="e.g. 15" hint="When an order is delivered, the payment due date is set this many days later." />
+      ) : null}
+      {admin ? <Field label="Default discount" value={discount} onChangeText={setDiscount} keyboardType="decimal-pad" prefix="%" hint="Applies to every product unless you set a product-wise discount." /> : null}
+      {admin ? <Field label="Credit days (optional)" value={creditDays} onChangeText={setCreditDays} keyboardType="number-pad" placeholder="e.g. 15" hint="When an order is delivered, the payment due date is set this many days later." /> : null}
+      {!admin && !id ? <T v="small">The customer is added to your list. The admin sets the discount and credit days.</T> : null}
+      {!id ? (
+        <Card style={{ gap: S.sm }}>
+          <T v="h3">Shop location (optional)</T>
+          <T v="small">{here ? `Saved: ${here.lat.toFixed(5)}, ${here.lng.toFixed(5)}${here.accuracy ? `, within about ${Math.round(here.accuracy)} m` : ''}` : 'If you are at the shop now, save its location. It is used for the route plan and visits.'}</T>
+          <View style={{ flexDirection: 'row' }}>
+            <Btn title={here ? 'Take location again' : 'I am at the shop: save location'} icon="locate-outline" small kind="secondary" onPress={takeLocation} loading={locating} />
+          </View>
+        </Card>
+      ) : null}
       <Card style={{ gap: S.md }}>
         <View>
           <T v="h3">Drug licence (optional)</T>
@@ -146,10 +178,10 @@ export default function CustomerForm() {
         <DateField label="Issue date" value={licenceIssued} onChange={setLicenceIssued} presets={[]} />
         <DateField label="Expiry date" value={licenceExpiry} onChange={setLicenceExpiry} presets={[]} />
       </Card>
-      {!id ? <Field label="Opening balance (optional)" value={opening} onChangeText={setOpening} keyboardType="numbers-and-punctuation" prefix="Rs." hint="What this customer already owes you today. Use a minus sign for an advance." /> : null}
-      {id ? <Toggle label="Active" value={active} onChange={setActive} hint="Inactive customers cannot place new orders." /> : null}
+      {admin && !id ? <Field label="Opening balance (optional)" value={opening} onChangeText={setOpening} keyboardType="numbers-and-punctuation" prefix="Rs." hint="What this customer already owes you today. Use a minus sign for an advance." /> : null}
+      {admin && id ? <Toggle label="Active" value={active} onChange={setActive} hint="Inactive customers cannot place new orders." /> : null}
 
-      {!id ? (
+      {admin && !id ? (
         <Card style={{ gap: S.md }}>
           <View>
             <T v="h3">App login (optional)</T>

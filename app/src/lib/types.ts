@@ -52,6 +52,50 @@ export type Customer = {
   overdue_amount?: number;
   open_orders?: number;
   logins?: { id: string; full_name: string; phone: string; is_active: boolean }[] | null;
+  lat?: number | null;
+  lng?: number | null;
+  location_at?: string | null;
+  added_by_name?: string | null;
+  route_days?: number[];
+  has_location?: boolean;
+};
+
+export type RoutePlan = {
+  user: { id: string; name: string };
+  plan: { start_date: string; cycle_days: number; off_day: number | null } | null;
+  today: { date: string; day_no: number | null };
+  tomorrow: { date: string; day_no: number | null };
+  days: { day_no: number; label: string | null; customers: { id: string; name: string; city: string | null; has_location: boolean }[] }[];
+  unplanned: number;
+};
+
+export type RouteStop = {
+  customer_id: string;
+  name: string;
+  city: string | null;
+  address: string | null;
+  phone: string | null;
+  lat: number | null;
+  lng: number | null;
+  has_location: boolean;
+  visited: boolean;
+  visited_at: string | null;
+  ordered: boolean;
+  order_id: string | null;
+  order_total: number | null;
+};
+
+export type RouteVisits = {
+  user: { id: string; name: string };
+  date: string;
+  has_plan: boolean;
+  day_no: number | null;
+  off_day: boolean;
+  label: string | null;
+  stops: RouteStop[];
+  visited: number;
+  ordered: number;
+  off_route_orders: { customer_id: string; name: string; order_id: string; total: number }[];
 };
 
 export type OrderRow = {

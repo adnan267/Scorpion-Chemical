@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
@@ -131,6 +131,12 @@ export default function UserForm() {
       <Field label="Name" value={name} onChangeText={setName} />
       {id !== me.id ? <Toggle label="Can sign in" value={active} onChange={setActive} hint="Turn off to block this login without deleting anything." /> : null}
       <View style={{ gap: S.sm }}>
+        {existing!.role === 'order_taker' ? (
+          <>
+            <Btn title="Route plan" icon="map-outline" onPress={() => router.push(`/route-plan?user=${id}` as any)} />
+            <Btn title="Today's route and visits" icon="navigate-outline" kind="secondary" onPress={() => router.push(`/team-route?id=${id}` as any)} />
+          </>
+        ) : null}
         <Btn title="Set a new password" icon="key-outline" kind="secondary" loading={busy === 'pw'} onPress={resetPassword} />
         <Btn title="Change mobile number" icon="call-outline" kind="secondary" loading={busy === 'phone'} onPress={changePhone} />
       </View>
