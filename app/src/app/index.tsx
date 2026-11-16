@@ -6,7 +6,7 @@ import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
 import { customerTypeLabel, fmtDate, isoDate, money, num } from '@/lib/format';
 import { scheduleRouteReminder } from '@/lib/routeReminder';
-import type { OrderRow, PaymentRow, RouteVisits } from '@/lib/types';
+import type { ExpensesToday, OrderRow, PaymentRow, RouteVisits } from '@/lib/types';
 import { Btn, Card, Empty, ErrorBox, Loading, Section, Stat, T } from '@/ui/kit';
 import { OrderCard, PaymentCard } from '@/ui/rows';
 import { DutyCard } from '@/ui/DutyCard';
@@ -103,6 +103,7 @@ function TakerHome() {
   const dash = useRpc<any>('dashboard');
   const orders = useRpc<OrderRow[]>('orders_list', { p_limit: 5 });
   const route = useRpc<RouteVisits>('route_visits', { p_user_id: null, p_date: null });
+  const spent = useRpc<ExpensesToday>('expenses_today');
   const d = dash.data;
 
   useEffect(() => {
@@ -110,7 +111,7 @@ function TakerHome() {
   }, []);
 
   return (
-    <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Order Taker" top onRefresh={() => { dash.refresh(); orders.reload(); route.reload(); }} refreshing={dash.refreshing}>
+    <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Order Taker" top onRefresh={() => { dash.refresh(); orders.reload(); route.reload(); spent.reload(); }} refreshing={dash.refreshing}>
       <DutyCard />
       <View style={{ flexDirection: 'row', gap: S.md }}>
         <Btn title="Take an order" icon="cart-outline" onPress={() => router.push('/customers?pick=order')} style={{ flex: 1 }} />
@@ -126,6 +127,13 @@ function TakerHome() {
           <Stat label="Your customers owe" value={money(d.customers_outstanding)} sub={`${d.customers} ${d.customers === 1 ? 'customer' : 'customers'}`} onPress={() => router.push('/customers')} />
         </Grid>
       ) : null}
+      <Card onPress={() => router.push('/expenses' as any)} style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
+        <View style={{ flex: 1 }}>
+          <T v="small">Today's expenses{spent.data?.city ? `, ${spent.data.city}` : ''}</T>
+          <T v="h3">{money(spent.data?.total ?? 0)}</T>
+        </View>
+        <T v="smallStrong" color={C.blue}>Add expense</T>
+      </Card>
       {route.data ? (
         <Section title="Today's route" action={<SeeAll href="/route-plan" label="Full plan" />}>
           <RouteDay r={route.data} self />

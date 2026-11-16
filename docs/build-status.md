@@ -20,6 +20,12 @@ Last updated: 16 Nov 2026. Scope is in `v1-scope.md`.
 - **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
 - APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
 
+## Version 2.2 (16 Nov 2026, app version 1.4.0, migration 0012_expenses.sql applied live)
+
+- **Order taker expenses**: Home card "Today's expenses" and More, Today's expenses. The order taker writes the city of the day's tour once, then adds each expense: Wagon/van, Bus, Rickshaw, Chingchi, Bike petrol, Food, Stock carriage (cartons or an extra seat for stock), Other (needs a note). Only today's entries are shown to them; they can remove a wrong entry the same day.
+- **Admin report** (More, Order taker expenses; or Staff logins, order taker, Expenses): this week / this month / last month, filter by order taker, totals by type, by order taker, average cost of one tour to each city, and every tour (order taker, day, city) with its entries and the orders taken that day. Admin can delete an entry.
+- Tests: 238 database checks (`tests/expenses_test.sql`) and `tests/run_expenses.mjs`, passing locally.
+
 ## Version 2.1 (16 Nov 2026, app version 1.3.0, migrations 0010_routes.sql and 0011_route_jobs.sql applied live)
 
 Asked for by the owner after the first phone test (voice notes).

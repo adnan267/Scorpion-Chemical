@@ -269,3 +269,17 @@ export type UserRow = {
   customer_name: string | null;
   customers_count: number;
 };
+
+export type ExpenseItem = { id: string; city?: string; category: string; label: string; amount: number; note: string | null; created_at: string };
+
+export type ExpensesToday = { date: string; city: string | null; total: number; items: ExpenseItem[] };
+
+export type ExpenseReport = {
+  from: string;
+  to: string;
+  total: number;
+  by_category: { category: string; label: string; amount: number }[];
+  by_user: { user_id: string; name: string; amount: number; tours: number }[];
+  by_city: { city: string; tours: number; amount: number; average: number }[];
+  tours: { user_id: string; name: string; date: string; city: string; total: number; orders: number; sales: number; items: ExpenseItem[] }[];
+};
