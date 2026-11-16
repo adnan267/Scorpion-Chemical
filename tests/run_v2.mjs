@@ -49,7 +49,7 @@ await step('orders: month view with booked-by summary', async () => {
 await step('loading sheet and all invoices', async () => {
   await go(page, '/stock-sheet'); await shot(page, 'v03-loading-sheet', true);
   await need('Take out in total', 'Bilal Ahmed', 'Blue Guard Face Mask');
-  await clickLabel(page, 'Print all invoices'); await sleep(3000);
+  await clickLabel(page, 'Print all bills'); await sleep(3000);
   const html = await page.$eval('iframe', (f) => f.srcdoc);
   for (const n of ['INV-1003', 'INV-1004', 'INV-1005']) if (!html.includes(n)) throw new Error('missing ' + n);
   await shot(page, 'v04-all-invoices');
@@ -160,7 +160,7 @@ allErrors.push(...errors); await browser.close();
 // ================= stock keeper =================
 ({ browser, page, errors } = await open());
 await login(page, '03044444444', 'keeper123');
-await step('stock keeper home is the loading sheet', async () => { await shot(page, 'v20-keeper-home', true); await need('Take out in total', 'Print all invoices'); });
+await step('stock keeper home is the loading sheet', async () => { await shot(page, 'v20-keeper-home', true); await need('Take out in total', 'Print all bills'); });
 await step('stock keeper delivers an order, sees no balances', async () => {
   await go(page, `/order/${ids.o4}`);
   if (await hasText('Balance')) throw new Error('balance visible to stock keeper');

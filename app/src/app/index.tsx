@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -70,6 +71,11 @@ function AdminHome() {
               <T v="strong" color={C.amber}>{d.licence_expiring} {d.licence_expiring === 1 ? 'licence expires' : 'licences expire'} within 30 days</T>
             </Card>
           ) : null}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.md }}>
+            <BigTile label="Total balance in market" value={money(d.total_outstanding)} sub={`${money(d.overdue_amount)} overdue`} color={C.red} icon="trending-up-outline" onPress={() => router.push('/recovery-sheet' as any)} />
+            <BigTile label="Today's recovery" value={money(d.today_recovery)} sub={`${d.today_recovery_count} ${d.today_recovery_count === 1 ? 'payment' : 'payments'}${Number(d.today_recovery_pending) ? `, ${money(d.today_recovery_pending)} to approve` : ''}`} color={C.green} icon="cash-outline" onPress={() => router.push('/recovery' as any)} />
+            <BigTile label="Today's expenses" value={money(d.today_expenses)} sub={`Office ${money(d.today_expenses_office)}, order takers ${money(Number(d.today_expenses) - Number(d.today_expenses_office))}`} color={C.amber} icon="wallet-outline" onPress={() => router.push('/expenses-report?period=today' as any)} />
+          </View>
           <Grid>
             <Stat label="Orders today" value={String(d.today_orders)} sub={money(d.today_sales)} onPress={() => router.push('/orders?period=today')} />
             <Stat label="Orders this week" value={String(d.week_orders)} sub={money(d.week_sales)} onPress={() => router.push('/orders?period=week')} />
@@ -226,5 +232,18 @@ function KeeperHome() {
     <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Stock Keeper" top>
       <StockSheet />
     </Screen>
+  );
+}
+
+function BigTile({ label, value, sub, color, icon, onPress }: { label: string; value: string; sub: string; color: string; icon: React.ComponentProps<typeof Ionicons>['name']; onPress: () => void }) {
+  return (
+    <Card onPress={onPress} style={{ flexGrow: 1, flexBasis: 230, gap: 4, borderLeftWidth: 4, borderLeftColor: color }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Ionicons name={icon} size={18} color={color} />
+        <T v="smallStrong" color={C.ink}>{label}</T>
+      </View>
+      <T v="figure">{value}</T>
+      <T v="small">{sub}</T>
+    </Card>
   );
 }

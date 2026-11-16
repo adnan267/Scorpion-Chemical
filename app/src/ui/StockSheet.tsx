@@ -2,7 +2,9 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
+import { printDoc, reportHtml } from '@/lib/report';
 import { addDays, fmtDate, isoDate, money } from '@/lib/format';
 import { Btn, Card, Empty, ErrorBox, Line, Loading, OrderTag, Section, T, Toggle } from './kit';
 import { C, S } from './theme';
@@ -37,6 +39,29 @@ export function StockSheet() {
   const q = useRpc<Sheet>('stock_sheet', { p_date: day, p_include_delivered: withDelivered });
   const s = q.data;
   const today = isoDate(new Date());
+  const me = useMe();
+
+  function printSheet() {
+    if (!s) return;
+    const title = `Loading sheet, ${fmtDate(day)}`;
+    printDoc(
+      reportHtml({
+        title: 'Loading sheet',
+        subtitle: `${fmtDate(day)}, ${s.orders_count} ${s.orders_count === 1 ? 'order' : 'orders'}${withDelivered ? '' : ' still to go out'}`,
+        company: me.company,
+        tables: [
+          { heading: 'Take out of the store in total', cols: [{ label: '#', width: '30px' }, { label: 'Product' }, { label: 'Qty', right: true, width: '70px' }, { label: 'Checked', width: '80px', blank: true }], rows: s.totals.map((r, n) => [n + 1, r.product_name, r.qty, '']) },
+          ...s.bookers.map((b) => ({
+            heading: `${b.name}: ${(b.orders ?? []).map((o) => `${o.customer} (${o.order_no})`).join(', ')}`,
+            cols: [{ label: '#', width: '30px' }, { label: 'Product' }, { label: 'Qty', right: true, width: '70px' }],
+            rows: (b.totals ?? []).map((r, n) => [n + 1, r.product_name, r.qty]),
+          })),
+        ],
+        signLines: ['Taken out by', 'Checked by'],
+      }),
+    ).catch(() => {});
+    return title;
+  }
 
   return (
     <>
@@ -48,10 +73,10 @@ export function StockSheet() {
         <T v="h2">{day === today ? 'Today' : fmtDate(day)}</T>
         {s ? <T v="small">{s.orders_count} {s.orders_count === 1 ? 'order' : 'orders'}, {s.to_deliver} to deliver</T> : null}
       </View>
-      <Toggle label="Include delivered orders" value={withDelivered} onChange={setWithDelivered} hint="Off: only orders that still have to go out." />
+      <Toggle label="Also show orders already delivered" value={withDelivered} onChange={setWithDelivered} hint={withDelivered ? 'Showing every order booked on this day.' : 'Showing only orders still to go out of the store.'} />
       {q.error ? <ErrorBox message={q.error} onRetry={q.reload} /> : null}
       {q.loading && !s ? <Loading /> : null}
-      {s && s.orders_count === 0 ? <Empty icon="cube-outline" title={withDelivered ? 'No orders on this day' : 'Nothing left to take out'} hint={withDelivered ? undefined : 'Turn on "Include delivered orders" to see the whole day.'} /> : null}
+      {s && s.orders_count === 0 ? <Empty icon="cube-outline" title={withDelivered ? 'No orders on this day' : 'Nothing left to take out'} hint={withDelivered ? undefined : 'Turn on "Also show orders already delivered" to see the whole day.'} /> : null}
       {s && s.orders_count > 0 ? (
         <>
           <Section title="Take out in total">
@@ -59,7 +84,8 @@ export function StockSheet() {
               <Totals rows={s.totals} />
             </Card>
           </Section>
-          <Btn title="Print all invoices" icon="print-outline" onPress={() => router.push(`/invoices?date=${day}` as any)} />
+          <Btn title="Print loading sheet" icon="print-outline" onPress={printSheet} />
+          <Btn title="Print all bills" icon="document-text-outline" kind="secondary" onPress={() => router.push(`/invoices?date=${day}` as any)} />
           {s.bookers.map((b) => (
             <Section key={b.user_id} title={b.name}>
               <Card style={{ gap: S.sm }}>
@@ -79,7 +105,7 @@ export function StockSheet() {
                     </View>
                   </Pressable>
                 ))}
-                <Btn title={`Print ${b.name.split(' ')[0]}'s invoices`} small kind="secondary" icon="print-outline" onPress={() => router.push(`/invoices?date=${day}&user=${b.user_id}` as any)} />
+                <Btn title={`Print ${b.name.split(' ')[0]}'s bills`} small kind="secondary" icon="print-outline" onPress={() => router.push(`/invoices?date=${day}&user=${b.user_id}` as any)} />
               </Card>
             </Section>
           ))}

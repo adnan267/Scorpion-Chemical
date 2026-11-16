@@ -20,6 +20,17 @@ Last updated: 16 Nov 2026. Scope is in `v1-scope.md`.
 - **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
 - APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
 
+## Version 2.4 (16 Nov 2026 evening, app version 1.5.0, migration 0015_v24.sql applied live)
+
+From the owner's voice notes after using 1.4.0:
+- **Admin dashboard**: three big tiles on top: Total balance in market (with overdue), Today's recovery (all payments dated today, any method; tap for the day's recovery by who collected and by method, any day, printable), Today's expenses (office + order takers; tap for the expenses report on Today).
+- **Office expenses** (Expenses, Add office expense): electricity bill, rent, salary (needs a name), kitchen/tea/water, gas/phone/internet, other; any past date. The expenses report shows office and order taker tours separately and prints. `expenses.kind` is 'tour' or 'office'.
+- **Recovery sheet** (dashboard balance tile, More): customers of one city, or of one order taker for local Multan areas, with balance and overdue and empty dotted Received / Remaining columns, printed on A4 with signature lines. Order takers can print their own.
+- **Printing**: loading sheet ("Print loading sheet" prints the take-out summary; bills are a separate button "Print all bills"; the toggle is now "Also show orders already delivered"), recovery, recovery sheet, expenses, customer statement. Web prints through a hidden frame, Android through the print dialog (which can also save a PDF). Helper `app/src/lib/report.ts`.
+- **Delete customer** (admin, customer page): the admin types the name; removes the customer with orders, returns, payments, statement (ledger purge allowed only inside this function), and its app logins (auth users too). Stock of orders not delivered goes back. Logged in activity_log. Making a customer inactive is still the way to keep history.
+- **Customers cannot send cash** (removed from their payment form and refused by the database).
+- Tests: 293 database checks (`tests/v24_test.sql`) and `tests/run_v24.mjs`; all earlier walkthroughs rerun, passing.
+
 ## Version 2.3 (16 Nov 2026, also app version 1.4.0; migrations 0013_colours_lots_cities.sql and 0014_licence_storage.sql applied live)
 
 From the owner's voice notes after testing the invoice:

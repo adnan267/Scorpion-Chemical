@@ -285,6 +285,10 @@ export type ExpenseReport = {
   from: string;
   to: string;
   total: number;
+  tour_total: number;
+  office_total: number;
+  office_by_category: { category: string; label: string; amount: number }[];
+  office: { id: string; date: string; category: string; label: string; amount: number; note: string | null; created_at: string }[];
   by_category: { category: string; label: string; amount: number }[];
   by_user: { user_id: string; name: string; amount: number; tours: number }[];
   by_city: { city: string; tours: number; amount: number; average: number }[];

@@ -38,7 +38,7 @@ allErrors.push(...errors); await browser.close();
 await login(page, '03007334811', 'admin123');
 await step('admin expense report', async () => {
   await go(page, '/expenses-report', 1800);
-  await need('Order taker expenses', 'Khanewal', 'Vehari', 'Stock carriage', 'a tour');
+  await need('Expenses', 'Order taker tours', 'Khanewal', 'Vehari', 'Stock carriage', 'a tour');
   await tap('Last month'); await sleep(1200); await tap('This month'); await sleep(1200);
   await page.evaluate(() => [...document.querySelectorAll('[role="button"]')].find((e) => e.innerText.startsWith('Khanewal')).click()); await sleep(600);
   await need('2 cartons');

@@ -27,6 +27,24 @@ export default function CustomerScreen() {
   const staff = admin || me.role === 'order_taker';
   const [locating, setLocating] = useState(false);
 
+  async function deleteCustomer() {
+    const v = await dialog.ask({
+      title: `Delete ${c?.name}?`,
+      message: `This removes ${c?.name} with every order, payment, return and statement entry, and their app login. It cannot be undone. Stock of orders not delivered yet goes back to the store. To keep the history, make the customer inactive instead (Edit, Active).\n\nType the customer's name to delete:`,
+      confirmLabel: 'Delete for ever',
+      danger: true,
+      input: { label: 'Customer name', required: true, number: false },
+    });
+    if (v === null) return;
+    try {
+      await rpc('customer_delete', { p_id: id, p_confirm_name: v });
+      dialog.toast(`${c?.name} deleted`);
+      router.replace('/customers' as any);
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    }
+  }
+
   async function openLicence() {
     try {
       const url = await licencePhotoUrl(c!.licence_photo!);
@@ -166,6 +184,8 @@ export default function CustomerScreen() {
                 <MenuRow icon="time-outline" label="Opening balance" sub={`What was owed before the app: ${money(c.opening_balance ?? 0)}`} onPress={setOpening} />
                 <Line />
                 <MenuRow icon="document-outline" label="Add old bill" sub="An unpaid bill from before the app" onPress={() => router.push(`/opening/bill?customer=${id}&name=${name}` as any)} />
+                <Line />
+                <MenuRow icon="trash-outline" label="Delete customer" sub="Removes the customer with all orders, payments and statement" onPress={deleteCustomer} />
               </>
             ) : null}
           </Card>

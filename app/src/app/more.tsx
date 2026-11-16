@@ -61,7 +61,11 @@ export default function More() {
           <Line />
           <MenuRow icon="people-outline" label="Staff logins" sub="Order takers (route plans), stock keepers and admins" onPress={() => router.push('/users')} />
           <Line />
-          <MenuRow icon="wallet-outline" label="Order taker expenses" sub="Every tour: city, fares, petrol, food, stock carriage" onPress={() => router.push('/expenses-report' as any)} />
+          <MenuRow icon="cash-outline" label="Recovery" sub="Payments received today or any day, by who collected" onPress={() => router.push('/recovery' as any)} />
+          <Line />
+          <MenuRow icon="print-outline" label="Recovery sheet" sub="Customers of a city or order taker with balances, to print" onPress={() => router.push('/recovery-sheet' as any)} />
+          <Line />
+          <MenuRow icon="wallet-outline" label="Expenses" sub="Office expenses and order taker tours" onPress={() => router.push('/expenses-report' as any)} />
           <Line />
           <MenuRow icon="cash-outline" label="Cash with order takers" sub="Cash collected but not yet handed over" onPress={() => router.push('/cash')} />
           <Line />
@@ -78,6 +82,8 @@ export default function More() {
           <MenuRow icon="cash-outline" label="Cash in hand" sub="Cash you collected that the admin has not approved yet" onPress={() => router.push('/cash')} />
           <Line />
           <MenuRow icon="map-outline" label="My route plan" sub="Which customers to visit on which day" onPress={() => router.push('/route-plan' as any)} />
+          <Line />
+          <MenuRow icon="print-outline" label="Recovery sheet" sub="Your customers with balances, to print" onPress={() => router.push('/recovery-sheet' as any)} />
           <Line />
           <MenuRow icon="business-outline" label="My cities" sub="Customers by city: what they owe and what you collected" onPress={() => router.push('/cities' as any)} />
           <Line />

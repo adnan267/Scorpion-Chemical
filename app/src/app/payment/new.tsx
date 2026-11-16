@@ -83,7 +83,7 @@ export default function NewPayment() {
         />
       ) : null}
       <Field label="Amount" prefix="Rs." value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />
-      <SelectField label="Paid by" value={method} onChange={setMethod} options={METHODS} />
+      <SelectField label="Paid by" value={method} onChange={setMethod} options={isCustomer ? METHODS.filter((m) => m.value !== 'cash') : METHODS} />
       {method !== 'cash' ? <Field label="Transaction / reference no. (optional)" value={reference} onChangeText={setReference} autoCapitalize="characters" /> : null}
       <DateField label="Payment date" value={paidOn} onChange={setPaidOn} presets={[0]} />
 

@@ -6,6 +6,7 @@ import { useMe } from '@/ctx/auth';
 import { useDialog } from '@/ctx/dialog';
 import { rpc, useRpc } from '@/lib/api';
 import { fmtDate, money, num, toNumber } from '@/lib/format';
+import { printDoc, reportHtml } from '@/lib/report';
 import type { Ledger } from '@/lib/types';
 import { Btn, Card, Empty, ErrorBox, Field, KV, Line, Loading, SelectField, Sheet, T } from '@/ui/kit';
 import { Screen } from '@/ui/Shell';
@@ -47,6 +48,25 @@ export default function LedgerScreen() {
     }
   }
 
+  function printStatement() {
+    if (!l) return;
+    printDoc(
+      reportHtml({
+        title: 'Statement of account',
+        subtitle: `${l.customer.name}${l.customer.city ? `, ${l.customer.city}` : ''}. ${fmtDate(new Date().toISOString())}`,
+        company: me.company,
+        tables: [
+          {
+            cols: [{ label: 'Date', width: '90px' }, { label: 'Entry' }, { label: 'Debit', right: true }, { label: 'Credit', right: true }, { label: 'Balance', right: true }],
+            rows: l.entries.map((e) => [fmtDate(e.created_at), `${KIND[e.kind] ?? e.kind}${e.note ? `, ${e.note}` : ''}`, Number(e.debit) ? num(e.debit) : '', Number(e.credit) ? num(e.credit) : '', num(e.balance)]),
+            foot: ['', 'Total', num(l.total_debit), num(l.total_credit), num(l.balance)],
+          },
+        ],
+        note: `Balance to pay: ${money(l.balance)}`,
+      }),
+    ).catch(() => {});
+  }
+
   return (
     <Screen title="Statement" subtitle={isCustomer ? undefined : l?.customer.name} back={isCustomer ? '/' : customerId ? `/customer/${customerId}` : '/customers'} onRefresh={q.refresh} refreshing={q.refreshing}>
       {!isCustomer && !customerId ? <Empty title="Choose a customer first" action={<Btn title="Customers" onPress={() => router.replace('/customers')} />} /> : null}
@@ -60,6 +80,7 @@ export default function LedgerScreen() {
             <Line />
             <KV k="Total billed" v={money(l.total_debit)} />
             <KV k="Total paid and credited" v={money(l.total_credit)} />
+            <Btn title="Print statement" icon="print-outline" kind="secondary" small onPress={printStatement} style={{ alignSelf: 'flex-start', marginTop: S.sm }} />
             {me.role === 'admin' ? <Btn title="Add adjustment" kind="secondary" small onPress={() => setAdjust(true)} style={{ alignSelf: 'flex-start', marginTop: S.sm }} /> : null}
           </Card>
 
