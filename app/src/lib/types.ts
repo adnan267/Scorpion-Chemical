@@ -27,6 +27,10 @@ export type Product = {
   low_stock_level: number | null;
   discount_pct: number;
   price: number;
+  colour?: string | null;
+  group_id?: string | null;
+  bonus_per?: number | null;
+  bonus_free?: number | null;
 };
 
 export type Customer = {
@@ -58,6 +62,7 @@ export type Customer = {
   added_by_name?: string | null;
   route_days?: number[];
   has_location?: boolean;
+  licence_photo?: string | null;
 };
 
 export type RoutePlan = {
@@ -130,6 +135,8 @@ export type OrderItem = {
   line_total: number;
   returned_qty: number;
   stock_qty: number | null;
+  lot_no?: string | null;
+  bonus_qty?: number;
 };
 
 export type OrderReturn = {
@@ -282,4 +289,10 @@ export type ExpenseReport = {
   by_user: { user_id: string; name: string; amount: number; tours: number }[];
   by_city: { city: string; tours: number; amount: number; average: number }[];
   tours: { user_id: string; name: string; date: string; city: string; total: number; orders: number; sales: number; items: ExpenseItem[] }[];
+};
+
+export type CityCustomer = { id: string; name: string; address: string | null; phone: string | null; balance: number; overdue: number; paid_month: number; paid_today: number; last_paid: string | null };
+export type CitySummary = {
+  user: { id: string; name: string };
+  cities: { city: string; customers: number; balance: number; overdue: number; paid_month: number; paid_today: number; list: CityCustomer[] }[];
 };

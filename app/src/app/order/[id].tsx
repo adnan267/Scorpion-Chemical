@@ -185,6 +185,8 @@ export default function OrderScreen() {
                           {i.qty} x {num(i.unit_price)}
                           {Number(i.discount_pct) > 0 ? `, ${num(i.discount_pct)}% off` : ''}
                         </T>
+                        {i.bonus_qty ? <T v="smallStrong" color={C.green}>+ {i.bonus_qty} free</T> : null}
+                        {i.lot_no ? <T v="small">Lot {i.lot_no}</T> : null}
                         {i.returned_qty > 0 ? <T v="small" color={C.red}>{i.returned_qty} returned</T> : null}
                       </View>
                       <Amount value={i.line_total} />

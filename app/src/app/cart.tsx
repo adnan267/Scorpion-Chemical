@@ -6,7 +6,7 @@ import { useMe } from '@/ctx/auth';
 import { useCart } from '@/ctx/cart';
 import { useDialog } from '@/ctx/dialog';
 import { rpc } from '@/lib/api';
-import { money, num } from '@/lib/format';
+import { bonusFor, money, num } from '@/lib/format';
 import { Amount, Btn, Card, Empty, Field, IconBtn, KV, Line, PackTag, Stepper, T } from '@/ui/kit';
 import { ProductThumb } from '@/ui/rows';
 import { goBack, Screen } from '@/ui/Shell';
@@ -67,13 +67,14 @@ export default function Cart() {
                 <ProductThumb path={p.image_path} size={56} />
                 <View style={{ flex: 1, gap: 4 }}>
                   <View style={{ flexDirection: 'row', gap: S.sm }}>
-                    <T v="strong" style={{ flex: 1 }}>{p.name}</T>
+                    <T v="strong" style={{ flex: 1 }}>{p.name}{p.colour ? ` (${p.colour})` : ''}</T>
                     <IconBtn icon="trash-outline" color={C.red} label={`Remove ${p.name}`} onPress={() => cart.setQty(p, 0)} />
                   </View>
                   {p.pack_size ? <PackTag text={p.pack_size} /> : null}
                   <T v="small">
                     {num(p.price)} each{Number(p.discount_pct) > 0 ? ` (${num(p.discount_pct)}% off ${num(p.net_rate)})` : ''}
                   </T>
+                  {bonusFor(qty, p.bonus_per, p.bonus_free) ? <T v="smallStrong" color={C.green}>+ {bonusFor(qty, p.bonus_per, p.bonus_free)} free (scheme {p.bonus_per}+{p.bonus_free})</T> : null}
                   {short ? <T v="small" color={C.red}>Only {p.stock_qty} in stock</T> : null}
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Stepper value={qty} min={1} onChange={(v) => cart.setQty(p, v)} />

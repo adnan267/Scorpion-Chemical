@@ -12,7 +12,7 @@ import { C, F, R, S } from '@/ui/theme';
 type Data = {
   customer: { id: string; name: string; type: string };
   default_discount_pct: number;
-  items: { product_id: string; name: string; pack_size: string | null; net_rate: number; discount_pct: number | null }[];
+  items: { product_id: string; name: string; pack_size: string | null; colour: string | null; net_rate: number; discount_pct: number | null; bonus_per: number | null; bonus_free: number | null; product_bonus_per: number | null; product_bonus_free: number | null }[];
 };
 
 export default function Discounts() {
@@ -21,6 +21,7 @@ export default function Discounts() {
   const q = useRpc<Data>('customer_discounts_get', { p_customer_id: id });
   const [def, setDef] = useState('0');
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [schemes, setSchemes] = useState<Record<string, string>>({});
   const [filled, setFilled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +30,7 @@ export default function Discounts() {
     if (q.data && !filled) {
       setDef(String(Number(q.data.default_discount_pct)));
       setVals(Object.fromEntries(q.data.items.filter((i) => i.discount_pct !== null).map((i) => [i.product_id, String(Number(i.discount_pct))])));
+      setSchemes(Object.fromEntries(q.data.items.filter((i) => i.bonus_per).map((i) => [i.product_id, i.bonus_free ? `${i.bonus_per}+${i.bonus_free}` : '0'])));
       setFilled(true);
     }
   }, [q.data, filled]);
@@ -41,10 +43,22 @@ export default function Discounts() {
     const items = [];
     for (const i of q.data?.items ?? []) {
       const raw = (vals[i.product_id] ?? '').trim();
-      if (raw === '') continue;
-      const v = toNumber(raw);
-      if (isNaN(v) || v < 0 || v > 100) return setError(`Discount for ${i.name} ${i.pack_size ?? ''} must be between 0 and 100`);
-      items.push({ product_id: i.product_id, discount_pct: v });
+      const sc = (schemes[i.product_id] ?? '').replace(/\s/g, '');
+      if (raw === '' && sc === '') continue;
+      const v = raw === '' ? null : toNumber(raw);
+      if (v !== null && (isNaN(v) || v < 0 || v > 100)) return setError(`Discount for ${i.name} ${i.pack_size ?? ''} must be between 0 and 100`);
+      let per: number | null = null;
+      let free: number | null = null;
+      if (sc === '0') {
+        per = 1;
+        free = 0;
+      } else if (sc !== '') {
+        const m = sc.match(/^(\d+)\+(\d+)$/);
+        if (!m || Number(m[1]) <= 0) return setError(`Write the scheme for ${i.name} like 100+2, or 0 for no scheme`);
+        per = Number(m[1]);
+        free = Number(m[2]);
+      }
+      items.push({ product_id: i.product_id, discount_pct: v, bonus_per: per, bonus_free: free });
     }
     setBusy(true);
     try {
@@ -65,7 +79,7 @@ export default function Discounts() {
       {q.data ? (
         <>
           <Field label="Default discount on every product" value={def} onChangeText={setDef} keyboardType="decimal-pad" prefix="%" />
-          <T v="small">To give a different discount on one product, type it next to that product. Leave it empty to use the default.</T>
+          <T v="small">To give a different discount on one product, type it next to that product. Leave it empty to use the default. Scheme: free pieces like 100+2 (2 free with every 100); empty uses the product's own scheme, 0 means no scheme for this customer.</T>
           <Card style={{ padding: 0 }}>
             {q.data.items.map((i, n) => {
               const raw = (vals[i.product_id] ?? '').trim();
@@ -76,7 +90,7 @@ export default function Discounts() {
                   {n > 0 ? <Line /> : null}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md, padding: S.md }}>
                     <View style={{ flex: 1, gap: 3 }}>
-                      <T v="strong">{i.name}</T>
+                      <T v="strong">{i.name}{i.colour ? ` (${i.colour})` : ''}</T>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         {i.pack_size ? <PackTag text={i.pack_size} /> : null}
                         <T v="small">
@@ -96,6 +110,15 @@ export default function Discounts() {
                       />
                       <T color={C.sub}> %</T>
                     </View>
+                    <TextInput
+                      accessibilityLabel={`Scheme for ${i.name} ${i.pack_size ?? ''}`}
+                      value={schemes[i.product_id] ?? ''}
+                      onChangeText={(t) => setSchemes((v) => ({ ...v, [i.product_id]: t }))}
+                      placeholder={i.product_bonus_per && i.product_bonus_free ? `${i.product_bonus_per}+${i.product_bonus_free}` : 'Scheme'}
+                      placeholderTextColor={C.faint}
+                      keyboardType="numbers-and-punctuation"
+                      style={{ width: 74, textAlign: 'center', fontFamily: F.semi, fontSize: 15, color: C.ink, paddingVertical: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.input, backgroundColor: C.surface }}
+                    />
                   </View>
                 </View>
               );

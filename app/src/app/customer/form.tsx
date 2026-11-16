@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
 import { useDialog } from '@/ctx/dialog';
 import { adminUsers, rpc, useRpc } from '@/lib/api';
 import { CUSTOMER_TYPES, customerTypeLabel, isValidPhone, loginRoleFor, toNumber } from '@/lib/format';
 import { getHere, type Here } from '@/lib/here';
+import { pickImage, type Picked, uploadLicencePhoto } from '@/lib/upload';
 import type { Customer, UserRow } from '@/lib/types';
 import { Btn, Card, DateField, ErrorBox, Field, Loading, SelectField, T, Toggle } from '@/ui/kit';
 import { goBack, Screen } from '@/ui/Shell';
@@ -41,6 +42,16 @@ export default function CustomerForm() {
   const [error, setError] = useState<string | null>(null);
   const [filled, setFilled] = useState(false);
   const [here, setHere] = useState<Here | null>(null);
+  const [licPhoto, setLicPhoto] = useState<Picked | null>(null);
+
+  async function chooseLicence(source: 'camera' | 'library') {
+    try {
+      const p = await pickImage(source);
+      if (p) setLicPhoto(p);
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    }
+  }
   const [locating, setLocating] = useState(false);
 
   async function takeLocation() {
@@ -112,6 +123,14 @@ export default function CustomerForm() {
           ...(here && !id ? { lat: here.lat, lng: here.lng } : {}),
         },
       });
+      if (licPhoto) {
+        try {
+          const path = await uploadLicencePhoto(newId, licPhoto);
+          await rpc('customer_set_licence_photo', { p_customer_id: newId, p_path: path });
+        } catch (e: any) {
+          dialog.toast(`Customer saved, but the licence photo was not: ${e.message}`, 'error');
+        }
+      }
       if (wantsLogin) {
         try {
           await adminUsers({ action: 'create', role: loginRoleFor(type), full_name: owner.trim() || name.trim(), phone: loginPhone, password: loginPassword, customer_id: newId });
@@ -177,6 +196,12 @@ export default function CustomerForm() {
         <Field label="Licence number" value={licenceNo} onChangeText={setLicenceNo} autoCapitalize="characters" />
         <DateField label="Issue date" value={licenceIssued} onChange={setLicenceIssued} presets={[]} />
         <DateField label="Expiry date" value={licenceExpiry} onChange={setLicenceExpiry} presets={[]} />
+        <T v="smallStrong" color={C.ink}>Licence photo</T>
+        {licPhoto ? <Image source={{ uri: licPhoto.uri }} style={{ width: '100%', height: 180, borderRadius: 8, backgroundColor: C.paper }} resizeMode="contain" /> : existing.data?.licence_photo ? <T v="small">A photo is saved. Choose a new one to replace it.</T> : null}
+        <View style={{ flexDirection: 'row', gap: S.sm, flexWrap: 'wrap' }}>
+          <Btn title="Take photo" icon="camera-outline" small kind="secondary" onPress={() => chooseLicence('camera')} />
+          <Btn title="Choose photo" icon="image-outline" small kind="ghost" onPress={() => chooseLicence('library')} />
+        </View>
       </Card>
       {admin && !id ? <Field label="Opening balance (optional)" value={opening} onChangeText={setOpening} keyboardType="numbers-and-punctuation" prefix="Rs." hint="What this customer already owes you today. Use a minus sign for an advance." /> : null}
       {admin && id ? <Toggle label="Active" value={active} onChange={setActive} hint="Inactive customers cannot place new orders." /> : null}

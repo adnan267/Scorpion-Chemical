@@ -171,3 +171,13 @@ export function toNumber(text: string): number {
   const v = Number(String(text).replace(/,/g, '').trim());
   return isFinite(v) ? v : NaN;
 }
+
+/** Free pieces for an order line under a bonus scheme, e.g. 100+2. */
+export function bonusFor(qty: number, per?: number | null, free?: number | null): number {
+  if (!per || !free || per <= 0 || free <= 0) return 0;
+  return Math.floor(qty / per) * free;
+}
+
+export function schemeText(per?: number | null, free?: number | null): string | null {
+  return per && free ? `${per}+${free}` : null;
+}

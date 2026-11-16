@@ -47,3 +47,14 @@ export async function proofUrl(path: string): Promise<string> {
   if (error || !data) throw new Error('Could not load the receipt photo.');
   return data.signedUrl;
 }
+
+/** Drug licence photos are stored per customer: <customer id>/<time>.jpg (private). */
+export function uploadLicencePhoto(customerId: string, file: Picked): Promise<string> {
+  return upload('licence-photos', `${customerId}/${Date.now()}.${file.ext}`, file);
+}
+
+export async function licencePhotoUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('licence-photos').createSignedUrl(path, 3600);
+  if (error || !data) throw new Error('Could not load the licence photo.');
+  return data.signedUrl;
+}

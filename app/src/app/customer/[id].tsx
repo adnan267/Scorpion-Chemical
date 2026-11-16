@@ -7,6 +7,7 @@ import { useDialog } from '@/ctx/dialog';
 import { rpc, useRpc } from '@/lib/api';
 import { customerTypeLabel, fmtDate, loginRoleFor, money, num, prettyPhone, toNumber } from '@/lib/format';
 import { getHere, mapsUrl } from '@/lib/here';
+import { licencePhotoUrl } from '@/lib/upload';
 import type { Customer, OrderRow } from '@/lib/types';
 import { Btn, Card, ErrorBox, IconBtn, KV, Line, Loading, Section, T, Tag } from '@/ui/kit';
 import { MenuRow, OrderCard } from '@/ui/rows';
@@ -25,6 +26,15 @@ export default function CustomerScreen() {
   const dialog = useDialog();
   const staff = admin || me.role === 'order_taker';
   const [locating, setLocating] = useState(false);
+
+  async function openLicence() {
+    try {
+      const url = await licencePhotoUrl(c!.licence_photo!);
+      await Linking.openURL(url);
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    }
+  }
 
   async function saveLocation() {
     const ok = await dialog.confirm({
@@ -107,11 +117,21 @@ export default function CustomerScreen() {
             <KV k="Order taker" v={c.order_taker_name ?? 'Not assigned'} />
             <KV k="Default discount" v={`${num(c.default_discount_pct)}%`} />
             <KV k="Credit days" v={c.credit_days !== null && c.credit_days !== undefined ? `${c.credit_days} days` : 'Not set'} />
-            {c.licence_no || c.licence_expiry ? (
+            {c.licence_no || c.licence_expiry || c.licence_photo ? (
               <>
                 <KV k="Licence no." v={c.licence_no ?? '-'} />
                 {c.licence_issued ? <KV k="Licence issued" v={fmtDate(c.licence_issued)} /> : null}
                 {c.licence_expiry ? <KV k="Licence expires" v={fmtDate(c.licence_expiry)} color={c.licence_expired ? C.red : undefined} /> : null}
+                {c.licence_photo ? (
+                  <KV
+                    k="Licence photo"
+                    v={
+                      <Pressable onPress={openLicence} hitSlop={8}>
+                        <T v="strong" color={C.blue}>View photo</T>
+                      </Pressable>
+                    }
+                  />
+                ) : null}
               </>
             ) : null}
           </Card>

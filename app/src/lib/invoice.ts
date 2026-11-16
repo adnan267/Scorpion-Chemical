@@ -10,7 +10,8 @@ function esc(s: unknown): string {
 const CSS = `
   * { box-sizing: border-box; }
   body { font-family: Helvetica, Arial, sans-serif; color: #16283A; margin: 0; font-size: 12.5px; background: #fff; }
-  .page { padding: 26px 28px; }
+  .page { padding: 26px 28px; min-height: 270mm; display: flex; flex-direction: column; }
+  .bottom { margin-top: auto; }
   .page + .page { page-break-before: always; break-before: page; }
   h1 { font-size: 21px; margin: 0; color: #0B5CAD; }
   .head { display: flex; justify-content: space-between; border-bottom: 3px solid #0B5CAD; padding-bottom: 10px; gap: 16px; }
@@ -24,9 +25,10 @@ const CSS = `
   .sum td { border: none; padding: 3px 7px; }
   .sum .total td { font-weight: bold; font-size: 14px; border-top: 2px solid #16283A; }
   .ret { color: #C3352B; }
-  .warranty { margin-top: 26px; border-top: 1px solid #DDE4EC; padding-top: 10px; display: flex; gap: 24px; align-items: flex-end; justify-content: space-between; }
+  .warranty { margin-top: 30px; border-top: 1px solid #DDE4EC; padding-top: 10px; display: flex; gap: 24px; align-items: flex-end; justify-content: space-between; }
   .warranty .w { flex: 1; font-size: 11.5px; line-height: 1.45; }
   .warranty .w b { display: block; margin-bottom: 3px; font-size: 12px; text-decoration: underline; }
+  .signrow { display: flex; justify-content: flex-end; margin-top: 18px; }
   .sign { width: 210px; text-align: center; font-size: 11px; }
   .sign img { max-width: 200px; max-height: 80px; display: block; margin: 0 auto 2px; }
   .sign .line { border-top: 1px solid #16283A; padding-top: 3px; }
@@ -41,8 +43,8 @@ function invoicePage(o: OrderDetail, s: InvoiceSettings | null): string {
   const rows = o.items
     .map(
       (i, n) => `<tr>
-        <td>${n + 1}</td><td>${esc(i.product_name)}</td>
-        <td class="r">${i.qty}</td><td class="r">${num(i.unit_price)}</td>
+        <td>${n + 1}</td><td>${esc(i.product_name)}</td><td>${esc(i.lot_no ?? '')}</td>
+        <td class="r">${i.qty}${i.bonus_qty ? `<div class="muted">+ ${i.bonus_qty} free</div>` : ''}</td><td class="r">${num(i.unit_price)}</td>
         <td class="r">${Number(i.discount_pct) ? num(i.discount_pct) + '%' : ''}</td>
         <td class="r">${num(i.line_total)}</td></tr>`
     )
@@ -94,7 +96,7 @@ function invoicePage(o: OrderDetail, s: InvoiceSettings | null): string {
     </div>
   </div>
   <table>
-    <thead><tr><th>#</th><th>Product</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Disc.</th><th class="r">Amount</th></tr></thead>
+    <thead><tr><th>#</th><th>Product</th><th>Lot no.</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Disc.</th><th class="r">Amount</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <table class="sum">
@@ -105,11 +107,13 @@ function invoicePage(o: OrderDetail, s: InvoiceSettings | null): string {
     ${paidRows}
   </table>
   ${o.notes ? `<p><span class="muted">Note:</span> ${esc(o.notes)}</p>` : ''}
-  <div class="warranty">
-    <div class="w">${inv?.warranty ? `<b>WARRANTY:</b>${esc(inv.warranty)}` : ''}</div>
-    <div class="sign">${sign}<div class="line">${esc(inv?.signer || 'Signature')}</div></div>
+  <div class="bottom">
+    <div class="warranty">
+      <div class="w">${inv?.warranty ? `<b>WARRANTY:</b>${esc(inv.warranty)}` : ''}</div>
+    </div>
+    <div class="signrow"><div class="sign">${sign}<div class="line">${esc(inv?.signer || 'Signature')}</div></div></div>
+    <div class="foot">This is a computer-generated invoice.</div>
   </div>
-  <div class="foot">This is a computer-generated invoice.</div>
 </div>`;
 }
 

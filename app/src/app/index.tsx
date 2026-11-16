@@ -124,7 +124,7 @@ function TakerHome() {
           <Stat label="Your orders today" value={String(d.today_orders)} sub={money(d.today_sales)} />
           <Stat label="Your sales this month" value={money(d.month_sales)} />
           <Stat label="Cash in your hand" value={money(d.cash_in_hand)} tone={Number(d.cash_in_hand) ? 'amber' : undefined} sub="Not yet handed to admin" onPress={() => router.push('/cash')} />
-          <Stat label="Your customers owe" value={money(d.customers_outstanding)} sub={`${d.customers} ${d.customers === 1 ? 'customer' : 'customers'}`} onPress={() => router.push('/customers')} />
+          <Stat label="Your customers owe" value={money(d.customers_outstanding)} sub={`${d.customers} ${d.customers === 1 ? 'customer' : 'customers'}, by city`} onPress={() => router.push('/cities' as any)} />
         </Grid>
       ) : null}
       <Card onPress={() => router.push('/expenses' as any)} style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>

@@ -20,6 +20,16 @@ Last updated: 16 Nov 2026. Scope is in `v1-scope.md`.
 - **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
 - APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
 
+## Version 2.3 (16 Nov 2026, also app version 1.4.0; migrations 0013_colours_lots_cities.sql and 0014_licence_storage.sql applied live)
+
+From the owner's voice notes after testing the invoice:
+- **Invoice**: Lot no. column (each order line takes the latest lot number entered when stock was received; old orders were filled in the same way). Warranty and signature now sit at the bottom of the page, signature under the warranty. Free pieces show under the quantity.
+- **Colours** (face mask boxes and pouches: Black, Blue, Green, White): product form, Colours, "Add colours". Each colour becomes its own product row with its own stock (current stock stays with the first colour, others start at 0), linked by `group_id`; rate, name, picture, scheme and customer discounts stay the same for all colours. Ordering shows one card with a row per colour. Invoice lines say e.g. "Face Mask (Adult) Pouch of 10 (Blue)". Not switched on for any live product yet; the owner adds the colours and stock.
+- **Bonus / free goods schemes** like 100+2: on the product (for everyone) and per customer on the Discounts page (blank = product's scheme, 0 = none). Free pieces are worked out by the server, come out of stock, are not charged, show in the cart, order, loading sheet and invoice. Returns cover paid pieces only.
+- **Licence photo** for customers (camera or gallery) on the customer form, private bucket `licence-photos` (`<customer id>/<file>`; admin, the customer's order taker and the customer can see it).
+- **Customers by city** for order takers (Home "Your customers owe" card, More, My cities; admin via Staff logins): each city's balance, collections this month and today, and every customer with what they owe, overdue and last payment.
+- Tests: 266 database checks (`tests/v23_test.sql`) and `tests/run_v23.mjs`; all earlier walkthroughs rerun, passing.
+
 ## Version 2.2 (16 Nov 2026, app version 1.4.0, migration 0012_expenses.sql applied live)
 
 - **Order taker expenses**: Home card "Today's expenses" and More, Today's expenses. The order taker writes the city of the day's tour once, then adds each expense: Wagon/van, Bus, Rickshaw, Chingchi, Bike petrol, Food, Stock carriage (cartons or an extra seat for stock), Other (needs a note). Only today's entries are shown to them; they can remove a wrong entry the same day.

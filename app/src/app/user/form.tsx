@@ -135,6 +135,7 @@ export default function UserForm() {
           <>
             <Btn title="Route plan" icon="map-outline" onPress={() => router.push(`/route-plan?user=${id}` as any)} />
             <Btn title="Today's route and visits" icon="navigate-outline" kind="secondary" onPress={() => router.push(`/team-route?id=${id}` as any)} />
+            <Btn title="Customers by city" icon="business-outline" kind="secondary" onPress={() => router.push(`/cities?user=${id}` as any)} />
             <Btn title="Expenses" icon="wallet-outline" kind="secondary" onPress={() => router.push(`/expenses-report?user=${id}` as any)} />
           </>
         ) : null}

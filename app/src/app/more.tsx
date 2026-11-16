@@ -79,6 +79,8 @@ export default function More() {
           <Line />
           <MenuRow icon="map-outline" label="My route plan" sub="Which customers to visit on which day" onPress={() => router.push('/route-plan' as any)} />
           <Line />
+          <MenuRow icon="business-outline" label="My cities" sub="Customers by city: what they owe and what you collected" onPress={() => router.push('/cities' as any)} />
+          <Line />
           <MenuRow icon="wallet-outline" label="Today's expenses" sub="Fares, petrol, food and stock carriage" onPress={() => router.push('/expenses' as any)} />
         </Card>
       ) : null}

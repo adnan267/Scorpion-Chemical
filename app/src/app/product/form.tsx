@@ -8,7 +8,7 @@ import { rpc, useRpc } from '@/lib/api';
 import { toNumber } from '@/lib/format';
 import type { Product } from '@/lib/types';
 import { pickImage, Picked, productImageUrl, uploadProductImage } from '@/lib/upload';
-import { Btn, Field, Loading, T, Toggle } from '@/ui/kit';
+import { Btn, Card, Field, Loading, T, Toggle } from '@/ui/kit';
 import { goBack, Screen } from '@/ui/Shell';
 import { C, R, S } from '@/ui/theme';
 
@@ -28,6 +28,10 @@ export default function ProductForm() {
   const [low, setLow] = useState('0');
   const [initial, setInitial] = useState('');
   const [active, setActive] = useState(true);
+  const [bonusPer, setBonusPer] = useState('');
+  const [bonusFree, setBonusFree] = useState('');
+  const [colourText, setColourText] = useState('');
+  const [colourBusy, setColourBusy] = useState(false);
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [photo, setPhoto] = useState<Picked | null>(null);
   const [filled, setFilled] = useState(false);
@@ -45,9 +49,40 @@ export default function ProductForm() {
       setLow(String(existing.low_stock_level ?? 0));
       setActive(existing.is_active);
       setImagePath(existing.image_path);
+      setBonusPer(existing.bonus_per ? String(existing.bonus_per) : '');
+      setBonusFree(existing.bonus_per ? String(existing.bonus_free ?? '') : '');
       setFilled(true);
     }
   }, [existing, filled]);
+
+  const siblings = existing?.group_id ? (all.data ?? []).filter((x) => x.group_id === existing.group_id) : [];
+
+  async function addColours() {
+    const list = colourText.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
+    if (!list.length) return dialog.toast('Write the colours, separated by commas', 'error');
+    setColourBusy(true);
+    try {
+      const n = await rpc<number>('product_colours_add', { p_id: id, p_colours: list });
+      dialog.toast(n ? `${n} ${n === 1 ? 'colour' : 'colours'} added. Set the stock of each colour.` : 'Those colours are already there');
+      setColourText('');
+      all.reload();
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    } finally {
+      setColourBusy(false);
+    }
+  }
+
+  async function renameColour() {
+    const v = await dialog.ask({ title: 'Rename colour', message: `Currently: ${existing?.colour ?? ''}`, confirmLabel: 'Rename', input: { label: 'Colour', required: true, initial: existing?.colour ?? '', number: false } });
+    if (v === null) return;
+    try {
+      await rpc('product_colour_rename', { p_id: id, p_colour: v });
+      all.reload();
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    }
+  }
 
   async function choose(source: 'camera' | 'library') {
     try {
@@ -64,6 +99,10 @@ export default function ProductForm() {
     if (!name.trim()) return setError('Enter the product name');
     if (isNaN(r) || r < 0) return setError('Enter the net rate');
     if (retail.trim() && isNaN(toNumber(retail))) return setError('Retail price must be a number');
+    const bp = bonusPer.trim() ? Number(bonusPer) : null;
+    const bf = bonusFree.trim() ? Number(bonusFree) : null;
+    if ((bp === null) !== (bf === null)) return setError('Fill both parts of the bonus scheme, e.g. 2 free with every 100, or leave both empty');
+    if (bp !== null && (!Number.isInteger(bp) || bp <= 0 || !Number.isInteger(bf) || bf! < 0)) return setError('Bonus scheme numbers must be whole numbers');
     setBusy(true);
     try {
       const path = photo ? await uploadProductImage(photo) : imagePath;
@@ -80,6 +119,8 @@ export default function ProductForm() {
           low_stock_level: parseInt(low || '0', 10) || 0,
           initial_stock: id ? null : parseInt(initial || '0', 10) || 0,
           is_active: active,
+          bonus_per: bp,
+          bonus_free: bf,
         },
       });
       dialog.toast(id ? 'Product saved' : 'Product added');
@@ -103,7 +144,7 @@ export default function ProductForm() {
   const shown = photo?.uri ?? productImageUrl(imagePath);
 
   return (
-    <Screen title={id ? 'Edit product' : 'Add product'} back="/catalog" footer={<Btn title={id ? 'Save changes' : 'Add product'} onPress={save} loading={busy} />}>
+    <Screen title={id ? `Edit product${existing?.colour ? ` (${existing.colour})` : ''}` : 'Add product'} back="/catalog" footer={<Btn title={id ? 'Save changes' : 'Add product'} onPress={save} loading={busy} />}>
       <View style={{ flexDirection: 'row', gap: S.md, alignItems: 'center' }}>
         <View style={{ width: 96, height: 96, borderRadius: R.card, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, overflow: 'hidden' }}>
           {shown ? <Image source={{ uri: shown }} style={{ width: 96, height: 96 }} contentFit="contain" /> : null}
@@ -125,6 +166,33 @@ export default function ProductForm() {
         {!id ? <Field label="Stock now" value={initial} onChangeText={setInitial} keyboardType="number-pad" placeholder="0" style={{ flex: 1 }} /> : null}
         <Field label="Warn me when stock reaches" value={low} onChangeText={setLow} keyboardType="number-pad" style={{ flex: 1 }} />
       </View>
+      <Card style={{ gap: S.sm }}>
+        <T v="h3">Bonus scheme (optional)</T>
+        <View style={{ flexDirection: 'row', gap: S.md, alignItems: 'flex-end' }}>
+          <Field label="Free pieces" value={bonusFree} onChangeText={setBonusFree} keyboardType="number-pad" placeholder="2" style={{ flex: 1 }} />
+          <Field label="With every" value={bonusPer} onChangeText={setBonusPer} keyboardType="number-pad" placeholder="100" style={{ flex: 1 }} />
+        </View>
+        <T v="small">
+          {bonusPer && bonusFree ? `Scheme ${bonusPer}+${bonusFree}: an order of ${Number(bonusPer) * 2} gets ${Number(bonusFree) * 2} free.` : 'For example 2 free with every 100 (100+2). Free pieces come out of stock but are not charged. A customer can have a different scheme on their Discounts page.'}
+        </T>
+      </Card>
+      {id && existing ? (
+        <Card style={{ gap: S.sm }}>
+          <T v="h3">Colours</T>
+          {siblings.length ? (
+            <T v="small">
+              This is the {existing.colour ?? 'plain'} one. Colours: {siblings.map((x) => `${x.colour ?? 'plain'} (${x.stock_qty ?? 0})`).join(', ')}. Each colour has its own stock; rates and details are shared.
+            </T>
+          ) : (
+            <T v="small">If this product comes in colours (e.g. Black, Blue, Green, White), add them here. Each colour gets its own stock. The current stock stays with the first colour.</T>
+          )}
+          <Field label={siblings.length ? 'Add more colours' : 'Colours'} value={colourText} onChangeText={setColourText} placeholder="Black, Blue, Green, White" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
+            <Btn title="Add colours" icon="color-palette-outline" small kind="secondary" onPress={addColours} loading={colourBusy} />
+            {siblings.length ? <Btn title="Rename this colour" small kind="ghost" onPress={renameColour} /> : null}
+          </View>
+        </Card>
+      ) : null}
       <Toggle label="Show to customers" value={active} onChange={setActive} hint="Turn off to hide the product without deleting it." />
       {id ? <Btn title="Stock and history" icon="layers-outline" kind="secondary" onPress={() => router.push(`/product/stock?id=${id}` as any)} /> : null}
       {error ? <T color={C.red}>{error}</T> : null}
