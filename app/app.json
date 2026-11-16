@@ -2,14 +2,14 @@
   "expo": {
     "name": "Scorpion Chemical",
     "slug": "scorpion-chemical",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "scorpion",
     "userInterfaceStyle": "light",
     "android": {
       "package": "pk.scorpionchemical.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

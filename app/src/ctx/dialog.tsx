@@ -10,7 +10,7 @@ type ConfirmOpts = {
   confirmLabel?: string;
   danger?: boolean;
   /** Ask for a line of text (a reason, remarks). */
-  input?: { label: string; placeholder?: string; required?: boolean; initial?: string };
+  input?: { label: string; placeholder?: string; required?: boolean; initial?: string; number?: boolean };
 };
 
 type DialogApi = {
@@ -71,7 +71,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
         <View style={{ padding: S.lg, gap: S.lg }}>
           {opts?.message ? <T color={C.sub}>{opts.message}</T> : null}
           {opts?.input ? (
-            <Field label={opts.input.label} placeholder={opts.input.placeholder} value={text} onChangeText={setText} multiline autoFocus />
+            <Field label={opts.input.label} placeholder={opts.input.placeholder} value={text} onChangeText={setText} multiline={!opts.input.number} keyboardType={opts.input.number ? 'numbers-and-punctuation' : 'default'} autoFocus />
           ) : null}
           <View style={{ flexDirection: 'row', gap: S.md }}>
             <Btn title="Cancel" kind="secondary" onPress={() => close(null)} style={{ flex: 1 }} />

@@ -1,6 +1,6 @@
 # Scorpion Chemical App — Build Status
 
-Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
+Last updated: 16 Nov 2026. Scope is in `v1-scope.md`.
 
 ## Where things stand
 
@@ -19,6 +19,18 @@ Last updated: 13 Nov 2026. Scope is in `v1-scope.md`.
 - **Live location of order takers**: order taker taps "Start duty"; the Android app then sends location every ~2 minutes or 30 m (expo-location background updates with a foreground-service notification; works with "while in use" permission, "Allow all the time" is optional). Points are queued on the phone when offline. Nothing is recorded off duty. Admin sees a live map (web and app, Leaflet + OpenStreetMap tiles, bundled Leaflet, refresh every 30 s) and any day's route with distance and orders. Database: `duty_sessions`, `location_points` (migration 0006), cron jobs to keep 90 days and to close duty after 12 hours without location (0008).
 - **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
 - APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
+
+## Version 2 (16 Nov 2026, app version 1.2.0, migration 0009_v2.sql applied live in 6 parts)
+
+- **Orders**: no Pending or Dispatched any more. An order is Confirmed when placed and its stock is taken then (not enough stock = the order is refused). Admin, the order taker or a stock keeper marks it Delivered. Admin can change quantities until delivery. Old pending orders without stock taken stay "pending" and are treated as to-deliver.
+- **Returns**: from a delivered order, by admin, the customer's order taker, or the customer. No approval. Goods go back into stock and the value comes off the account (ledger kind `return`). By default only from the due date onwards; admin setting "Allow returns before the due date".
+- **Stock keeper**: new login role `stock_keeper` (Staff logins). Home is the loading sheet: the day's orders by booker, product totals to take out, print all invoices or one booker's. Can mark delivered; sees no payments or balances. Admin has the same sheet (More, Loading sheet).
+- **Customers**: label "Medical store" is now **Consumer** (database value still `store`); new type **Dawakhana**. Credit days (due date = delivery + credit days, can be changed when delivering). Optional drug licence number, issue and expiry date, printed on invoices; an expired licence only shows a warning.
+- **Invoices**: new numbers start with INV- (old ORD- stay). Preview screen with Print (and Share PDF on the phone) wherever an invoice opens. Footer has the owner's warranty text and his digital signature (no stamp), editable in More, Company and invoice. Signature in use: the clean photo the owner sent on 16 Nov, made transparent (`docs/signature.png`, 420 px).
+- Stock entries say **Lot no.** instead of Batch no. (database column is still `batch_no`).
+- **Admin home**: Take an order / Record payment buttons, orders today / this week / this month, licence warnings. Orders screen: period chips (today, week, month, last month, all), totals, and who booked how many for how much.
+- **Opening data** (More, Opening data): customer opening balance, old unpaid bills (amount only, with due date and reminders, numbered by the owner or OB-), stock count, and an Excel import on the web panel (template with sheets Customers, Old bills, Stock, Help; every row is checked and nothing is saved until Import). Dates in the file are read day/month/year.
+- Tests: 187 database checks and 16 v2 browser steps (`tests/v2_test.sql`, `tests/run_v2.mjs`) plus the earlier walkthroughs, all passing locally.
 
 ## What was built
 

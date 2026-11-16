@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
     if (body.action === "create") {
       const role = String(body.role ?? "");
-      if (!["admin", "order_taker", "store", "distributor"].includes(role)) throw new Refuse("Invalid role");
+      if (!["admin", "order_taker", "stock_keeper", "store", "distributor"].includes(role)) throw new Refuse("Invalid role");
       const id = await createLogin(role, String(body.full_name ?? "").trim(), String(body.phone ?? ""), String(body.password ?? ""), body.customer_id ?? null);
       return json({ id });
     }

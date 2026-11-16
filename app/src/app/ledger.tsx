@@ -11,7 +11,7 @@ import { Btn, Card, Empty, ErrorBox, Field, KV, Line, Loading, SelectField, Shee
 import { Screen } from '@/ui/Shell';
 import { C, S } from '@/ui/theme';
 
-const KIND: Record<string, string> = { opening: 'Opening balance', order: 'Order delivered', payment: 'Payment', adjustment: 'Adjustment' };
+const KIND: Record<string, string> = { opening: 'Opening balance', order: 'Order delivered', payment: 'Payment', adjustment: 'Adjustment', return: 'Goods returned' };
 
 export default function LedgerScreen() {
   const me = useMe();

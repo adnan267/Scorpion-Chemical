@@ -20,6 +20,8 @@ select pg_temp.mk('03033333333', 'store123') as ua \gset
 select pg_temp.mk('03055555555', 'dist123') as ud \gset
 select public.service_create_profile(:'admin', 'admin', 'Muhammad Adnan', '03007334811');
 select public.service_create_profile(:'taker', 'order_taker', 'Bilal Ahmed', '03011111111');
+select pg_temp.mk('03044444444', 'keeper123') as keeper \gset
+select public.service_create_profile(:'keeper', 'stock_keeper', 'Kashif Store', '03044444444');
 
 select pg_temp.login(:'admin');
 select public.customer_save(format('{"type":"store","name":"Al Shifa Medical Store","owner_name":"Rashid Mehmood","phone":"03033333333","address":"Nishtar Road","city":"Multan","order_taker_id":"%s","default_discount_pct":5,"opening_balance":4500}', :'taker')::jsonb) as ca \gset
@@ -33,23 +35,23 @@ select id as spirit120 from products where pack_size = '120ml' \gset
 select id as cyc500 from products where name = 'Cyclone Toilet Cleaner' and pack_size = '500ml' \gset
 select id as maskbox from products where name = 'Blue Guard Face Mask (Adult)' \gset
 select id as gloves from products where name = 'Gloves' \gset
+update customers set credit_days = 30, licence_no = 'DL-MLN-0457', licence_issued = date '2023-01-10', licence_expiry = app.today() - 5 where id = :'ca';
+update customers set credit_days = 15 where id = :'cb';
 select public.customer_discounts_set(:'ca', 5, format('[{"product_id":"%s","discount_pct":10}]', :'spirit30')::jsonb);
 
--- store A: one delivered & partly paid (overdue), one delivered, one confirmed, one pending
+-- store A: one delivered & partly paid (overdue), one delivered, one to deliver
 select pg_temp.login(:'ua');
 select public.order_place(null, format('[{"product_id":"%s","qty":100},{"product_id":"%s","qty":24}]', :'spirit30', :'cyc500')::jsonb)->>'id' as o1 \gset
 select public.order_place(null, format('[{"product_id":"%s","qty":50}]', :'spirit120')::jsonb)->>'id' as o2 \gset
 select pg_temp.login(:'taker');
-select public.order_place(:'ca', format('[{"product_id":"%s","qty":20},{"product_id":"%s","qty":30}]', :'maskbox', :'gloves')::jsonb, 'Deliver before Friday')->>'id' as o3 \gset
+select public.order_place(:'ca', format('[{"product_id":"%s","qty":20},{"product_id":"%s","qty":10}]', :'maskbox', :'gloves')::jsonb, 'Deliver before Friday')->>'id' as o3 \gset
 select public.order_place(:'cb', format('[{"product_id":"%s","qty":40}]', :'spirit30')::jsonb)->>'id' as o4 \gset
 select pg_temp.login(:'ud');
 select public.order_place(null, format('[{"product_id":"%s","qty":200},{"product_id":"%s","qty":60}]', :'spirit120', :'cyc500')::jsonb)->>'id' as o5 \gset
 
 select pg_temp.login(:'admin');
-select public.order_set_status(:'o1', 'delivered', app.today() - 4);
-select public.order_set_status(:'o2', 'delivered', app.today() + 2);
-select public.order_set_status(:'o5', 'dispatched');
-select public.order_set_status(:'o4', 'confirmed');
+select public.order_deliver(:'o1', app.today() - 4);
+select public.order_deliver(:'o2', app.today() + 2);
 update orders set created_at = created_at - interval '12 days', delivered_at = now() - interval '10 days' where id = :'o1';
 update orders set created_at = created_at - interval '3 days', delivered_at = now() - interval '2 days' where id = :'o2';
 

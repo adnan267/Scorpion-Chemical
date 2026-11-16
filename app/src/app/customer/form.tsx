@@ -6,7 +6,7 @@ import { useDialog } from '@/ctx/dialog';
 import { adminUsers, rpc, useRpc } from '@/lib/api';
 import { CUSTOMER_TYPES, customerTypeLabel, isValidPhone, loginRoleFor, toNumber } from '@/lib/format';
 import type { Customer, UserRow } from '@/lib/types';
-import { Btn, Card, ErrorBox, Field, Loading, SelectField, T, Toggle } from '@/ui/kit';
+import { Btn, Card, DateField, ErrorBox, Field, Loading, SelectField, T, Toggle } from '@/ui/kit';
 import { goBack, Screen } from '@/ui/Shell';
 import { C, S } from '@/ui/theme';
 
@@ -26,6 +26,10 @@ export default function CustomerForm() {
   const [taker, setTaker] = useState<string>('');
   const [discount, setDiscount] = useState('0');
   const [opening, setOpening] = useState('');
+  const [creditDays, setCreditDays] = useState('');
+  const [licenceNo, setLicenceNo] = useState('');
+  const [licenceIssued, setLicenceIssued] = useState<string | null>(null);
+  const [licenceExpiry, setLicenceExpiry] = useState<string | null>(null);
   const [active, setActive] = useState(true);
   const [loginPhone, setLoginPhone] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -45,6 +49,10 @@ export default function CustomerForm() {
       setTaker(c.order_taker_id ?? '');
       setDiscount(String(Number(c.default_discount_pct)));
       setActive(c.is_active);
+      setCreditDays(c.credit_days !== null && c.credit_days !== undefined ? String(c.credit_days) : '');
+      setLicenceNo(c.licence_no ?? '');
+      setLicenceIssued(c.licence_issued ?? null);
+      setLicenceExpiry(c.licence_expiry ?? null);
       setFilled(true);
     }
   }, [existing.data, filled]);
@@ -56,6 +64,8 @@ export default function CustomerForm() {
     if (!name.trim()) return setError('Enter the name');
     if (isNaN(disc) || disc < 0 || disc > 100) return setError('Discount must be between 0 and 100');
     if (isNaN(open)) return setError('Opening balance must be a number');
+    const days = creditDays.trim() === '' ? null : Number(creditDays.trim());
+    if (days !== null && (!Number.isInteger(days) || days < 0 || days > 365)) return setError('Credit days must be a whole number from 0 to 365');
     const wantsLogin = !id && (loginPhone.trim() !== '' || loginPassword !== '');
     if (wantsLogin) {
       if (!isValidPhone(loginPhone)) return setError('Login mobile number should look like 03001234567');
@@ -74,6 +84,10 @@ export default function CustomerForm() {
           city,
           order_taker_id: taker || null,
           default_discount_pct: disc,
+          credit_days: days,
+          licence_no: licenceNo,
+          licence_issued: licenceIssued,
+          licence_expiry: licenceExpiry,
           is_active: active,
           opening_balance: id ? null : open,
         },
@@ -122,6 +136,16 @@ export default function CustomerForm() {
         hint="Only the assigned order taker can order and collect payment for this customer."
       />
       <Field label="Default discount" value={discount} onChangeText={setDiscount} keyboardType="decimal-pad" prefix="%" hint="Applies to every product unless you set a product-wise discount." />
+      <Field label="Credit days (optional)" value={creditDays} onChangeText={setCreditDays} keyboardType="number-pad" placeholder="e.g. 15" hint="When an order is delivered, the payment due date is set this many days later." />
+      <Card style={{ gap: S.md }}>
+        <View>
+          <T v="h3">Drug licence (optional)</T>
+          <T v="small">Printed on this customer's invoices.</T>
+        </View>
+        <Field label="Licence number" value={licenceNo} onChangeText={setLicenceNo} autoCapitalize="characters" />
+        <DateField label="Issue date" value={licenceIssued} onChange={setLicenceIssued} presets={[]} />
+        <DateField label="Expiry date" value={licenceExpiry} onChange={setLicenceExpiry} presets={[]} />
+      </Card>
       {!id ? <Field label="Opening balance (optional)" value={opening} onChangeText={setOpening} keyboardType="numbers-and-punctuation" prefix="Rs." hint="What this customer already owes you today. Use a minus sign for an advance." /> : null}
       {id ? <Toggle label="Active" value={active} onChange={setActive} hint="Inactive customers cannot place new orders." /> : null}
 

@@ -55,7 +55,11 @@ export default function More() {
           <Line />
           <MenuRow icon="map-outline" label="Live map" sub="Where order takers are now, and their routes" onPress={() => router.push('/team-map')} />
           <Line />
-          <MenuRow icon="people-outline" label="Staff logins" sub="Order takers and admins" onPress={() => router.push('/users')} />
+          <MenuRow icon="cube-outline" label="Loading sheet" sub="Each day's orders, stock to take out, invoices to print" onPress={() => router.push('/stock-sheet' as any)} />
+          <Line />
+          <MenuRow icon="file-tray-full-outline" label="Opening data" sub="Balances, old bills and stock from before the app; Excel import" onPress={() => router.push('/opening' as any)} />
+          <Line />
+          <MenuRow icon="people-outline" label="Staff logins" sub="Order takers, stock keepers and admins" onPress={() => router.push('/users')} />
           <Line />
           <MenuRow icon="cash-outline" label="Cash with order takers" sub="Cash collected but not yet handed over" onPress={() => router.push('/cash')} />
           <Line />
@@ -63,7 +67,7 @@ export default function More() {
           <Line />
           <MenuRow icon="alarm-outline" label="Check due-date reminders now" sub="They also run by themselves every morning" onPress={runReminders} />
           <Line />
-          <MenuRow icon="business-outline" label="Company details" sub="Shown on invoices" onPress={() => router.push('/settings')} />
+          <MenuRow icon="business-outline" label="Company and invoice" sub="Company details, warranty, signature, returns" onPress={() => router.push('/settings')} />
         </Card>
       ) : null}
 

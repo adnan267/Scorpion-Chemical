@@ -4,7 +4,7 @@ const db = new pg.Client({ host: '127.0.0.1', port: 54329, user: 'postgres', dat
 await db.connect();
 const one = async (q) => (await db.query(q)).rows[0];
 const ca = (await one(`select id from customers where name='Al Shifa Medical Store'`)).id;
-const o1 = (await one(`select id from orders where order_no='ORD-1001'`)).id;
+const o1 = (await one(`select id from orders where order_no='INV-1001'`)).id;
 const taker = (await one(`select id from profiles where role='order_taker'`)).id;
 const steps = [];
 const { browser, page, errors } = await open();
@@ -33,31 +33,28 @@ await step('ledger: add adjustment', async () => {
   if (!(await hasText('15,000'))) throw new Error('balance should be 15,000 after 300 credit');
   await shot(page, 'a3-ledger-after-adjust');
 });
-await step('invoice opens for printing', async () => {
+await step('invoice preview with print', async () => {
   await go(page, `/order/${o1}`);
-  const popup = new Promise((res) => browser.once('targetcreated', async (t) => res(await t.page())));
-  await clickLabel(page, 'Invoice (PDF)');
-  const p2 = await Promise.race([popup, sleep(6000).then(() => null)]);
-  if (!p2) throw new Error('invoice window did not open');
-  await sleep(800);
-  await p2.evaluate(() => { window.print = () => {}; });
-  const text = await p2.evaluate(() => document.body.innerText);
-  if (!/Invoice/.test(text) || !/ORD-1001/.test(text) || !/Al Shifa Medical Store/.test(text) || !/11,100/.test(text) || !/Remaining/.test(text)) throw new Error('invoice content wrong: ' + text.slice(0, 200));
-  await p2.setViewport({ width: 800, height: 1000 });
-  await p2.screenshot({ path: '/tmp/shots/a4-invoice.png' });
-  await p2.close();
+  await clickLabel(page, 'Invoice'); await sleep(1800);
+  const html = await page.$eval('iframe', (f) => f.srcdoc);
+  if (!/INV-1001/.test(html) || !/Al Shifa Medical Store/.test(html) || !/11,100/.test(html) || !/Remaining/.test(html)) throw new Error('invoice content wrong');
+  if (!(await page.$('[aria-label="Print"]'))) throw new Error('no print button');
+  await page.setViewport({ width: 900, height: 1200 });
+  await shot(page, 'a4-invoice', true);
+  await page.setViewport({ width: 412, height: 880 });
 });
 await step('add customer with app login', async () => {
   await go(page, '/customer/form');
   const inputs = await page.$$('input');
-  // order: name, owner, phone, address, city, discount, opening, login phone, login password
+  // order: name, owner, phone, address, city, discount, credit days, licence no, issue, expiry, opening, login phone, login password
   await inputs[0].type('Noor Pharmacy'); await inputs[1].type('Noor Ahmed'); await inputs[2].type('0304-4444444'); await inputs[3].type('Bosan Road');
   await inputs[5].click(); await sleep(150); await page.keyboard.type('4');
-  await inputs[6].type('1200'); await inputs[7].type('03044444444'); await inputs[8].type('noor1234');
+  await inputs[6].type('15'); await inputs[7].type('DL-77'); await inputs[9].type('31/12/2027');
+  await inputs[10].type('1200'); await inputs[11].type('03066666666'); await inputs[12].type('noor1234');
   await clickLabel(page, 'Add customer'); await sleep(2500);
   await shot(page, 'a5-new-customer');
-  const r = await one(`select c.default_discount_pct d, (select sum(debit - credit) from ledger_entries where customer_id = c.id) bal, (select count(*) from profiles where customer_id = c.id and role = 'store' and phone = '03044444444') logins from customers c where name = 'Noor Pharmacy'`);
-  if (!r || Number(r.d) !== 4 || Number(r.bal) !== 1200 || Number(r.logins) !== 1) throw new Error('saved ' + JSON.stringify(r));
+  const r = await one(`select c.default_discount_pct d, (select sum(debit - credit) from ledger_entries where customer_id = c.id) bal, (select count(*) from profiles where customer_id = c.id and role = 'store' and phone = '03066666666') logins, c.credit_days cd, c.licence_expiry::text le from customers c where name = 'Noor Pharmacy'`);
+  if (!r || Number(r.d) !== 4 || Number(r.bal) !== 1200 || Number(r.logins) !== 1 || r.cd !== 15 || r.le !== '2027-12-31') throw new Error('saved ' + JSON.stringify(r));
 });
 await step('reset an order taker password', async () => {
   await go(page, `/user/form?id=${taker}`);
@@ -70,7 +67,7 @@ await step('new customer can sign in and sees 4% price', async () => {
   await go(page, '/more');
   await page.evaluate(() => { [...document.querySelectorAll('[role="button"]')].find((e) => e.innerText.includes('Sign out')).click(); });
   await sleep(600); await clickLabel(page, 'Sign out'); await sleep(1500);
-  await page.type('input[placeholder="03001234567"]', '03044444444'); await page.type('input[type="password"]', 'noor1234');
+  await page.type('input[placeholder="03001234567"]', '03066666666'); await page.type('input[type="password"]', 'noor1234');
   await page.click('[aria-label="Sign in"]'); await sleep(2500);
   if (!(await hasText('Noor Pharmacy')) || !(await hasText('1,200'))) throw new Error('new customer home wrong');
   await go(page, '/catalog');

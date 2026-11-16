@@ -12,6 +12,7 @@ export async function open({ width = 412, height = 880 } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE ' + m.text().slice(0, 300)); });
+  page.on('response', async (r) => { if (r.status() === 400) errors.push('400 ' + r.url().slice(0, 120) + ' ' + (await r.text().catch(() => '')).slice(0, 200)); });
   page.on('requestfailed', (r) => errors.push('REQFAILED ' + r.url().slice(0, 120)));
   return { browser, page, errors };
 }

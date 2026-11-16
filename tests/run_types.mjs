@@ -16,17 +16,17 @@ const clickText = async (t, last = false) => {
   await sleep(700);
 };
 await login(page, '03007334811', 'admin123');
-await step('type list has all six types', async () => {
+await step('type list has all seven types', async () => {
   await go(page, '/customer/form');
-  await clickText('Medical store');
-  for (const t of ['Distributor', 'Wholesaler', 'Retailer', 'Clinic', 'Hospital']) if (!(await hasText(t))) throw new Error(t + ' missing');
+  await clickText('Consumer');
+  for (const t of ['Distributor', 'Wholesaler', 'Retailer', 'Clinic', 'Hospital', 'Dawakhana']) if (!(await hasText(t))) throw new Error(t + ' missing');
   await shot(page, 't1-types');
   await clickText('Hospital', true);
   if (!(await hasText('Hospital name'))) throw new Error('name label not updated');
 });
 await step('add hospital with login', async () => {
   const inputs = await page.$$('input');
-  await inputs[0].type('Nishtar Hospital'); await inputs[7].type('03088888888'); await inputs[8].type('hosp1234');
+  await inputs[0].type('Nishtar Hospital'); await inputs[11].type('03088888888'); await inputs[12].type('hosp1234');
   await clickLabel(page, 'Add customer'); await sleep(2500);
   const r = (await db.query(`select c.type, p.role from customers c join profiles p on p.customer_id = c.id where c.name = 'Nishtar Hospital'`)).rows[0];
   if (!r || r.type !== 'hospital' || r.role !== 'store') throw new Error(JSON.stringify(r));

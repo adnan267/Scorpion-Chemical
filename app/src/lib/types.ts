@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'order_taker' | 'store' | 'distributor';
+export type Role = 'admin' | 'order_taker' | 'store' | 'distributor' | 'stock_keeper';
 
 export type Company = { name: string; address?: string; phone?: string; email?: string };
 
@@ -39,6 +39,12 @@ export type Customer = {
   city: string | null;
   is_active: boolean;
   default_discount_pct: number;
+  credit_days: number | null;
+  licence_no: string | null;
+  licence_issued?: string | null;
+  licence_expiry: string | null;
+  licence_expired: boolean | null;
+  opening_balance?: number;
   order_taker_id: string | null;
   order_taker_name: string | null;
   balance: number;
@@ -53,6 +59,8 @@ export type OrderRow = {
   order_no: string;
   status: string;
   total: number;
+  returned: number;
+  is_opening: boolean;
   due_date: string | null;
   created_at: string;
   delivered_at: string | null;
@@ -63,7 +71,7 @@ export type OrderRow = {
   created_by_name: string;
   created_by_role: string;
   items_count: number;
-  paid: number;
+  paid: number | null;
   remaining: number | null;
   overdue: boolean;
 };
@@ -76,16 +84,40 @@ export type OrderItem = {
   unit_price: number;
   discount_pct: number;
   line_total: number;
+  returned_qty: number;
   stock_qty: number | null;
+};
+
+export type OrderReturn = {
+  id: string;
+  return_no: string;
+  total: number;
+  note: string | null;
+  created_at: string;
+  by: string | null;
+  items: { product_name: string; qty: number; line_total: number }[];
+};
+
+export type InvoiceSettings = {
+  company: Company | null;
+  invoice: { warranty: string | null; signer: string | null; signature: string | null } | null;
+  returns: { before_due: boolean } | null;
 };
 
 export type OrderDetail = {
   id: string;
   order_no: string;
   status: string;
+  is_opening: boolean;
   subtotal: number;
   discount_total: number;
   total: number;
+  returned: number;
+  opening_paid: number;
+  returns: OrderReturn[];
+  can_return: boolean;
+  return_note: string | null;
+  can_deliver: boolean;
   due_date: string | null;
   notes: string | null;
   cancel_reason: string | null;
@@ -97,9 +129,21 @@ export type OrderDetail = {
   created_by: string;
   created_by_name: string;
   created_by_role: string;
-  customer: { id: string; name: string; type: string; phone: string | null; address: string | null; city: string | null; balance: number };
+  customer: {
+    id: string;
+    name: string;
+    type: string;
+    phone: string | null;
+    address: string | null;
+    city: string | null;
+    balance: number | null;
+    credit_days: number | null;
+    licence_no: string | null;
+    licence_issued: string | null;
+    licence_expiry: string | null;
+  };
   items: OrderItem[];
-  paid: number;
+  paid: number | null;
   remaining: number | null;
   history: { action: string; at: string; by: string | null; details: any }[] | null;
 };

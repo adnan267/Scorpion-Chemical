@@ -3,8 +3,9 @@ import React from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
-import { useRpc } from '@/lib/api';
-import { customerTypeLabel, loginRoleFor, money, num, prettyPhone } from '@/lib/format';
+import { useDialog } from '@/ctx/dialog';
+import { rpc, useRpc } from '@/lib/api';
+import { customerTypeLabel, fmtDate, loginRoleFor, money, num, prettyPhone, toNumber } from '@/lib/format';
 import type { Customer, OrderRow } from '@/lib/types';
 import { Btn, Card, ErrorBox, IconBtn, KV, Line, Loading, Section, T, Tag } from '@/ui/kit';
 import { MenuRow, OrderCard } from '@/ui/rows';
@@ -20,6 +21,26 @@ export default function CustomerScreen() {
   const admin = me.role === 'admin';
   const bal = Number(c?.balance ?? 0);
   const name = encodeURIComponent(c?.name ?? '');
+  const dialog = useDialog();
+
+  async function setOpening() {
+    const v = await dialog.ask({
+      title: 'Opening balance',
+      message: 'What this customer owed before you started using the app. Use a minus sign for an advance. Old bills with due dates are better added with "Add old bill".',
+      confirmLabel: 'Save',
+      input: { label: 'Amount (Rs.)', required: true, number: true, initial: String(Number(c?.opening_balance ?? 0)) },
+    });
+    if (v === null) return;
+    const n = toNumber(v);
+    if (isNaN(n)) return dialog.toast('Enter a number', 'error');
+    try {
+      await rpc('customer_set_opening', { p_customer_id: id, p_amount: n });
+      dialog.toast('Opening balance saved');
+      q.reload();
+    } catch (e: any) {
+      dialog.toast(e.message, 'error');
+    }
+  }
 
   return (
     <Screen
@@ -39,6 +60,7 @@ export default function CustomerScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
               {Number(c.overdue_amount) > 0 ? <Tag label={`${money(c.overdue_amount)} overdue`} tone="red" /> : null}
               {!c.is_active ? <Tag label="Inactive" tone="gray" /> : null}
+              {c.licence_expired ? <Tag label="Licence expired" tone="red" /> : null}
             </View>
             <View style={{ flexDirection: 'row', gap: S.md, marginTop: S.sm }}>
               <Btn title="Take order" icon="cart-outline" onPress={() => router.push(`/catalog?customer=${id}&name=${name}` as any)} style={{ flex: 1 }} disabled={!c.is_active} />
@@ -61,6 +83,14 @@ export default function CustomerScreen() {
             {c.address || c.city ? <KV k="Address" v={[c.address, c.city].filter(Boolean).join(', ')} /> : null}
             <KV k="Order taker" v={c.order_taker_name ?? 'Not assigned'} />
             <KV k="Default discount" v={`${num(c.default_discount_pct)}%`} />
+            <KV k="Credit days" v={c.credit_days !== null && c.credit_days !== undefined ? `${c.credit_days} days` : 'Not set'} />
+            {c.licence_no || c.licence_expiry ? (
+              <>
+                <KV k="Licence no." v={c.licence_no ?? '-'} />
+                {c.licence_issued ? <KV k="Licence issued" v={fmtDate(c.licence_issued)} /> : null}
+                {c.licence_expiry ? <KV k="Licence expires" v={fmtDate(c.licence_expiry)} color={c.licence_expired ? C.red : undefined} /> : null}
+              </>
+            ) : null}
           </Card>
 
           <Card style={{ padding: 0, overflow: 'hidden' }}>
@@ -73,6 +103,10 @@ export default function CustomerScreen() {
               <>
                 <Line />
                 <MenuRow icon="pricetags-outline" label="Discounts" sub="Default discount and product-wise discounts" onPress={() => router.push(`/customer/discounts?id=${id}` as any)} />
+                <Line />
+                <MenuRow icon="time-outline" label="Opening balance" sub={`What was owed before the app: ${money(c.opening_balance ?? 0)}`} onPress={setOpening} />
+                <Line />
+                <MenuRow icon="document-outline" label="Add old bill" sub="An unpaid bill from before the app" onPress={() => router.push(`/opening/bill?customer=${id}&name=${name}` as any)} />
               </>
             ) : null}
           </Card>

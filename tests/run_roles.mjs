@@ -23,7 +23,7 @@ const allErrors = [];
 ({ browser, page, errors } = await open());
 await login(page, '03011111111', 'taker123');
 await step('taker home', async () => { await shot(page, '80-taker-home'); if (!(await hasText('Cash in your hand'))) throw new Error('taker dashboard missing'); });
-await step('taker: pick customer for order', async () => { await clickLabel(page, 'Take an order'); await shot(page, '81-taker-pick'); await clickText('Al Shifa Medical Store'); });
+await step('taker: pick customer for order', async () => { await go(page, '/customers?pick=order'); await shot(page, '81-taker-pick'); await clickText('Al Shifa Medical Store'); });
 await step('taker: catalog for customer shows stock + discount', async () => {
   await sleep(600); await shot(page, '82-taker-catalog');
   if (!(await hasText('For Al Shifa Medical Store'))) throw new Error('not ordering for customer');
@@ -35,7 +35,7 @@ await step('taker: add two products and place order', async () => {
   const adds2 = await page.$$('[aria-label="Add"]'); await adds2[2].click(); await sleep(300);
   await clickText('Review order'); await shot(page, '83-taker-cart');
   await clickLabel(page, 'Place order'); await sleep(1800); await shot(page, '84-taker-order-placed');
-  if (!(await hasText('Pending'))) throw new Error('order page not shown');
+  if (!(await hasText('Confirmed'))) throw new Error('order page not shown');
 });
 await step('taker: cash payment without receipt', async () => {
   await go(page, `/payment/new?customer=${ca}&name=Al%20Shifa%20Medical%20Store`);
@@ -63,7 +63,7 @@ await step('store: order via cart', async () => {
   await page.click('input[aria-label="Quantity"]'); await sleep(250); await page.keyboard.type('24', { delay: 60 }); await sleep(300);
   await clickText('Review order'); await shot(page, '92-store-cart');
   await clickLabel(page, 'Place order'); await sleep(1800);
-  if (!(await hasText('Pending'))) throw new Error('order page not shown');
+  if (!(await hasText('Confirmed'))) throw new Error('order page not shown');
 });
 await step('store: payment needs a receipt', async () => {
   await go(page, '/payment/new'); await page.type('input[placeholder="0"]', '2500');
@@ -83,7 +83,7 @@ await step('store: notifications', async () => { await go(page, '/notifications'
 await step('store: cannot see another customer', async () => {
   const cb = (await one(`select id from customers where name='City Pharmacy'`)).id;
   await go(page, `/customer/${cb}`); if (!(await hasText('You do not have access'))) throw new Error('other customer not blocked');
-  const o4 = (await one(`select id from orders where order_no='ORD-1004'`)).id;
+  const o4 = (await one(`select id from orders where order_no='INV-1004'`)).id;
   await go(page, `/order/${o4}`); if (!(await hasText('You do not have access'))) throw new Error('other order not blocked');
 });
 await step('store: change password, sign out, sign in again', async () => {
@@ -119,6 +119,6 @@ const real = [...new Set(allErrors)].filter((e) => !/status of 40[03]/.test(e));
 console.log(real.length ? 'BROWSER ERRORS:\n' + real.join('\n') : 'no unexpected browser errors');
 const chk = await one(`select (select count(*) from orders) orders, (select count(*) from payments) payments,
   (select count(*) from payments where proof_path is not null and created_at > now() - interval '5 minutes' and amount = 2500) new_proof,
-  (select string_agg(qty::text, ',') from order_items i join orders o on o.id = i.order_id where o.order_no = 'ORD-1007') store_qty`);
+  (select string_agg(qty::text, ',') from order_items i join orders o on o.id = i.order_id where o.order_no = 'INV-1007') store_qty`);
 console.log('db check:', JSON.stringify(chk));
 await db.end();

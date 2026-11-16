@@ -36,10 +36,11 @@ export default function Announce() {
         value={audience}
         onChange={setAudience}
         options={[
-          { value: 'all', label: 'Everyone', sub: 'All customers and order takers' },
-          { value: 'store', label: 'Customers except distributors', sub: 'Medical stores, wholesalers, retailers, clinics, hospitals' },
+          { value: 'all', label: 'Everyone', sub: 'All customers and staff' },
+          { value: 'store', label: 'Customers except distributors', sub: 'Consumers, wholesalers, retailers, clinics, hospitals, dawakhanas' },
           { value: 'distributor', label: 'Distributors' },
           { value: 'order_taker', label: 'Order takers' },
+          { value: 'stock_keeper', label: 'Stock keepers' },
         ]}
       />
       <Field label="Title" value={title} onChangeText={setTitle} placeholder="e.g. New rates from Monday" />

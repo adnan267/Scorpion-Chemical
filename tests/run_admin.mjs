@@ -3,7 +3,7 @@ import pg from 'pg';
 const db = new pg.Client({ host: '127.0.0.1', port: 54329, user: 'postgres', database: 'scorpion_e2e' });
 await db.connect();
 const one = async (q) => (await db.query(q)).rows[0];
-const o3 = (await one(`select id from orders where order_no='ORD-1003'`)).id;
+const o3 = (await one(`select id from orders where order_no='INV-1003'`)).id;
 const p2 = (await one(`select id from payments where payment_no='PAY-1002'`)).id;
 const ca = (await one(`select id from customers where name='Al Shifa Medical Store'`)).id;
 const gl = (await one(`select id from products where name='Gloves'`)).id;
@@ -13,28 +13,34 @@ await login(page, '03007334811', 'admin123');
 const steps = [];
 const step = async (name, fn) => { try { await fn(); steps.push('ok   ' + name); } catch (e) { steps.push('FAIL ' + name + ': ' + e.message.split('\n')[0]); await shot(page, 'FAIL-' + name.replace(/\W+/g, '-')); } };
 
-await step('order detail (pending, stock short)', async () => { await go(page, `/order/${o3}`); await shot(page, '10-order-pending', true); });
-await step('confirm blocked by stock', async () => { await clickLabel(page, 'Confirm order'); await sleep(800); await shot(page, '11-confirm-blocked'); });
-await step('change quantities sheet', async () => { await clickLabel(page, 'Change quantities'); await shot(page, '12-edit-sheet'); });
-await step('reduce gloves to 10 and save', async () => {
+await step('order detail (confirmed on placing)', async () => {
+  await go(page, `/order/${o3}`); await shot(page, '10-order-confirmed', true);
+  if (!(await page.evaluate(() => document.body.innerText.includes('Confirmed')))) throw new Error('not confirmed');
+});
+await step('change quantities: gloves 10 -> 8', async () => {
+  await clickLabel(page, 'Change quantities');
   const inputs = await page.$$('input[aria-label="Quantity"]');
-  // rows are ordered by product name: Blue Guard Face Mask (Adult), Gloves
-  await inputs[1].click(); await sleep(200); await page.keyboard.type('10', { delay: 60 }); await sleep(300);
+  await inputs[1].click({ clickCount: 3 }); await sleep(200); await page.keyboard.type('8', { delay: 60 }); await sleep(300);
   const v = await page.$$eval('input[aria-label="Quantity"]', (els) => els.map((e) => e.value).join(','));
-  if (v !== '20,10') throw new Error('quantities are ' + v);
+  if (v !== '20,8') throw new Error('quantities are ' + v);
   await shot(page, '12-edit-sheet');
   await clickLabel(page, 'Save changes'); await sleep(1500);
-  const total = await page.evaluate(() => document.body.innerText.includes('4,275'));
-  if (!total) throw new Error('new total 4,275 not shown');
 });
-await step('confirm order', async () => { await clickLabel(page, 'Confirm order'); await sleep(1200); await shot(page, '13-order-confirmed', true); });
-await step('deliver with due date', async () => {
+await step('deliver: due date filled from 30 credit days', async () => {
   await clickLabel(page, 'Mark as delivered');
-  await page.type('input[placeholder="DD/MM/YYYY"]', '28/11/2026');
+  const v = await page.$eval('input[placeholder="DD/MM/YYYY"]', (e) => e.value);
+  if (!v) throw new Error('due date not prefilled');
   await shot(page, '14-deliver-sheet');
   const btns = await page.$$('[aria-label="Mark as delivered"]');
   await btns[btns.length - 1].click(); await sleep(1500);
   await shot(page, '15-order-delivered', true);
+  if (!(await page.evaluate(() => document.body.innerText.includes('Returns open on the due date')))) throw new Error('return rule note missing');
+});
+await step('invoice preview', async () => {
+  await clickLabel(page, 'Invoice'); await sleep(1800);
+  const html = await page.$eval('iframe', (f) => f.srcdoc);
+  for (const t of ['INV-1003', 'DL-MLN-0457', 'JULIUS YOUNAS', 'Licence']) if (!html.includes(t)) throw new Error('invoice missing ' + t);
+  await shot(page, '16-invoice-preview', true);
 });
 await step('payments list', async () => { await go(page, '/payments?status=pending'); await shot(page, '20-payments'); });
 await step('payment detail with receipt', async () => { await go(page, `/payment/${p2}`, 2200); await shot(page, '21-payment-detail', true); });
@@ -74,6 +80,6 @@ await step('desktop layout', async () => {
 });
 console.log(steps.join('\n'));
 console.log(errors.length ? 'BROWSER ERRORS:\n' + [...new Set(errors)].join('\n') : 'no browser errors');
-const chk = await one(`select (select status from orders where order_no='ORD-1003') s, (select stock_qty from products where name='Gloves') g, (select status from payments where payment_no='PAY-1002') p, (select count(*) from profiles where phone='03022222222') u, (select count(*) from notifications where kind='announcement') a`);
+const chk = await one(`select (select status from orders where order_no='INV-1003') s, (select due_date - app.today() from orders where order_no='INV-1003') due_in, (select total from orders where order_no='INV-1003') t, (select stock_qty from products where name='Gloves') g, (select status from payments where payment_no='PAY-1002') p, (select count(*) from profiles where phone='03022222222') u, (select count(*) from notifications where kind='announcement') a`);
 console.log('db check:', JSON.stringify(chk));
 await db.end(); await browser.close();

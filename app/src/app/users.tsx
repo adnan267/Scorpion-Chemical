@@ -15,6 +15,7 @@ export default function Users() {
   const all = q.data ?? [];
   const takers = all.filter((u) => u.role === 'order_taker');
   const admins = all.filter((u) => u.role === 'admin');
+  const keepers = all.filter((u) => u.role === 'stock_keeper');
   const customers = all.filter((u) => u.role === 'store' || u.role === 'distributor');
 
   const group = (rows: UserRow[], empty: string, sub: (u: UserRow) => string) => (
@@ -37,6 +38,9 @@ export default function Users() {
         <>
           <Section title="Order takers" action={<Btn title="Add order taker" small kind="secondary" icon="add" onPress={() => router.push('/user/form?role=order_taker')} />}>
             {group(takers, 'No order takers yet.', (u) => `${u.customers_count} ${u.customers_count === 1 ? 'customer' : 'customers'}`)}
+          </Section>
+          <Section title="Stock keepers" action={<Btn title="Add stock keeper" small kind="secondary" icon="add" onPress={() => router.push('/user/form?role=stock_keeper')} />}>
+            {group(keepers, 'No stock keeper yet. A stock keeper sees each day\'s orders and invoices, and marks orders delivered.', () => 'Loading sheet and deliveries')}
           </Section>
           <Section title="Admins" action={<Btn title="Add admin" small kind="secondary" icon="add" onPress={() => router.push('/user/form?role=admin')} />}>
             {group(admins, '', () => 'Full access')}

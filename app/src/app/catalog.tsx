@@ -5,8 +5,8 @@ import { Pressable, View } from 'react-native';
 import { useMe } from '@/ctx/auth';
 import { useCart } from '@/ctx/cart';
 import { useRpc } from '@/lib/api';
-import { money, num } from '@/lib/format';
-import type { Product } from '@/lib/types';
+import { fmtDate, money, num } from '@/lib/format';
+import type { Customer, Product } from '@/lib/types';
 import { Amount, Btn, Card, Chips, Empty, ErrorBox, IconBtn, Loading, PackTag, SearchBox, Stepper, T, Tag } from '@/ui/kit';
 import { ProductThumb } from '@/ui/rows';
 import { Screen } from '@/ui/Shell';
@@ -41,6 +41,7 @@ function Shop({ orderingFor }: { orderingFor: { id: string; name: string } | nul
   const [q, setQ] = useState('');
   const list = useRpc<Product[]>('products_list', { p_customer_id: orderingFor?.id ?? null });
   const staff = me.role === 'admin' || me.role === 'order_taker';
+  const cust = useRpc<Customer>('customer_get', { p_id: orderingFor?.id }, !!orderingFor);
 
   // the order belongs to one customer; switching customer starts a new one
   useEffect(() => {
@@ -68,6 +69,14 @@ function Shop({ orderingFor }: { orderingFor: { id: string; name: string } | nul
           </Pressable>
         ) : undefined
       }>
+      {cust.data?.licence_expired ? (
+        <Card style={{ backgroundColor: C.redSoft, borderColor: C.red }}>
+          <T v="strong" color={C.red}>Drug licence expired</T>
+          <T v="small" color={C.ink}>
+            {cust.data.name}'s licence{cust.data.licence_no ? ` ${cust.data.licence_no}` : ''} expired on {fmtDate(cust.data.licence_expiry)}. You can still take the order; ask for the renewed licence.
+          </T>
+        </Card>
+      ) : null}
       <SearchBox value={q} onChangeText={setQ} placeholder="Search products" />
       {list.error ? <ErrorBox message={list.error} onRetry={list.reload} /> : null}
       {list.loading && !list.data ? <Loading /> : null}

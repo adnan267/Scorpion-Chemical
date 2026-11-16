@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 
 import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
-import { CUSTOMER_TYPES } from '@/lib/format';
+import { addDays, CUSTOMER_TYPES } from '@/lib/format';
 import type { Customer } from '@/lib/types';
 import { Btn, Chips, Empty, ErrorBox, IconBtn, Loading, SearchBox } from '@/ui/kit';
 import { CustomerCard } from '@/ui/rows';
@@ -12,30 +12,32 @@ import { C } from '@/ui/theme';
 
 export default function Customers() {
   const me = useMe();
-  const params = useLocalSearchParams<{ pick?: string }>();
-  const pick = params.pick === 'order' || params.pick === 'payment' ? params.pick : null;
+  const params = useLocalSearchParams<{ pick?: string; filter?: string }>();
+  const pick = params.pick === 'order' || params.pick === 'payment' || params.pick === 'bill' ? params.pick : null;
   const [q, setQ] = useState('');
-  const [type, setType] = useState<string>('all');
+  const [type, setType] = useState<string>(params.filter === 'licence' ? 'licence' : 'all');
   const list = useRpc<Customer[]>('customers_list', {});
   const admin = me.role === 'admin';
 
+  const soon = addDays(30);
   const items = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (list.data ?? []).filter(
-      (c) => (type === 'all' || c.type === type) && (!pick || c.is_active) && (!s || `${c.name} ${c.city ?? ''} ${c.phone ?? ''}`.toLowerCase().includes(s))
+      (c) => (type === 'all' || c.type === type || (type === 'licence' && !!c.licence_expiry && c.licence_expiry <= soon)) && (!pick || c.is_active) && (!s || `${c.name} ${c.city ?? ''} ${c.phone ?? ''}`.toLowerCase().includes(s))
     );
-  }, [list.data, q, type, pick]);
+  }, [list.data, q, type, pick, soon]);
 
   function open(c: Customer) {
     const name = encodeURIComponent(c.name);
     if (pick === 'order') router.push(`/catalog?customer=${c.id}&name=${name}` as any);
     else if (pick === 'payment') router.push(`/payment/new?customer=${c.id}&name=${name}` as any);
+    else if (pick === 'bill') router.replace(`/opening/bill?customer=${c.id}&name=${name}` as any);
     else router.push(`/customer/${c.id}` as any);
   }
 
   return (
     <Screen
-      title={pick === 'order' ? 'Who is the order for?' : pick === 'payment' ? 'Who paid?' : 'Customers'}
+      title={pick === 'order' ? 'Who is the order for?' : pick === 'payment' ? 'Who paid?' : pick === 'bill' ? 'Whose old bill?' : 'Customers'}
       top={!pick && me.role === 'order_taker'}
       back="/"
       onRefresh={list.refresh}
@@ -48,6 +50,7 @@ export default function Customers() {
         options={[
           { value: 'all', label: 'All' },
           ...CUSTOMER_TYPES.filter((t) => (list.data ?? []).some((c) => c.type === t.value)).map((t) => ({ value: t.value as string, label: t.plural })),
+          ...(admin && (list.data ?? []).some((c) => c.licence_expiry && c.licence_expiry <= soon) ? [{ value: 'licence', label: 'Licence expired or expiring' }] : []),
         ]}
       />
       {list.error ? <ErrorBox message={list.error} onRetry={list.reload} /> : null}

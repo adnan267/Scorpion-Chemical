@@ -12,7 +12,7 @@ import { Amount, Card, OrderTag, PaymentTag, T, Tag } from './kit';
 import { C, R, S } from './theme';
 
 export function OrderCard({ o, showCustomer }: { o: OrderRow; showCustomer: boolean }) {
-  const unpaid = o.status === 'delivered' && Number(o.remaining) > 0;
+  const unpaid = o.status === 'delivered' && o.remaining !== null && Number(o.remaining) > 0;
   return (
     <Card onPress={() => router.push(`/order/${o.id}` as any)} style={{ gap: 6 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: S.md }}>
@@ -20,7 +20,7 @@ export function OrderCard({ o, showCustomer }: { o: OrderRow; showCustomer: bool
           <T v="strong" numberOfLines={1}>{showCustomer ? o.customer_name : o.order_no}</T>
           <T v="small" numberOfLines={1}>
             {showCustomer ? `${o.order_no}, ` : ''}
-            {fmtDate(o.created_at)}, {o.items_count} {o.items_count === 1 ? 'item' : 'items'}
+            {fmtDate(o.created_at)}{o.is_opening ? '' : `, ${o.items_count} ${o.items_count === 1 ? 'item' : 'items'}`}
           </T>
         </View>
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -28,6 +28,12 @@ export function OrderCard({ o, showCustomer }: { o: OrderRow; showCustomer: bool
           <OrderTag status={o.status} />
         </View>
       </View>
+      {Number(o.returned) > 0 || o.is_opening ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          {o.is_opening ? <Tag label="Old bill" tone="gray" /> : null}
+          {Number(o.returned) > 0 ? <Tag label={`${money(o.returned)} returned`} tone="red" /> : null}
+        </View>
+      ) : null}
       {unpaid || (o.status === 'delivered' && o.remaining !== null) ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           {unpaid ? (
@@ -79,6 +85,7 @@ export function CustomerCard({ c, onPress }: { c: Customer; onPress: () => void 
             {c.city ? `, ${c.city}` : ''}
           </T>
           {!c.is_active ? <Tag label="Inactive" tone="gray" /> : null}
+          {c.licence_expired ? <Tag label="Licence expired" tone="red" /> : null}
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <Amount value={Math.abs(bal)} color={bal > 0 ? C.red : bal < 0 ? C.green : C.sub} />

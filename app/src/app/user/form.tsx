@@ -114,6 +114,7 @@ export default function UserForm() {
         <Field label="Name" value={name} onChangeText={setName} />
         <Field label="Mobile number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="03001234567" hint="They sign in with this number." />
         <Field label="Password" value={password} onChangeText={setPassword} autoCapitalize="none" hint="At least 6 characters. Tell it to them; they can change it later." />
+        {role === 'stock_keeper' ? <T v="small" color={C.sub}>A stock keeper sees the day's orders, product totals to take out and all invoices to print, and can mark orders delivered. They do not see payments or balances.</T> : null}
         {role === 'admin' ? <T v="small" color={C.amber}>An admin can see and change everything, including payments and other logins.</T> : null}
         {error ? <T color={C.red}>{error}</T> : null}
       </Screen>

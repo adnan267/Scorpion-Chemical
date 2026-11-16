@@ -4,11 +4,12 @@ import { Pressable, View } from 'react-native';
 
 import { useMe } from '@/ctx/auth';
 import { useRpc } from '@/lib/api';
-import { customerTypeLabel, fmtDate, money, num } from '@/lib/format';
+import { customerTypeLabel, fmtDate, isoDate, money, num } from '@/lib/format';
 import type { OrderRow, PaymentRow } from '@/lib/types';
 import { Btn, Card, Empty, ErrorBox, Loading, Section, Stat, T } from '@/ui/kit';
 import { OrderCard, PaymentCard } from '@/ui/rows';
 import { DutyCard } from '@/ui/DutyCard';
+import { StockSheet } from '@/ui/StockSheet';
 import { Screen } from '@/ui/Shell';
 import { liveState, type TeamRow } from './team-map';
 import { C, R, S } from '@/ui/theme';
@@ -17,6 +18,7 @@ export default function Home() {
   const me = useMe();
   if (me.role === 'admin') return <AdminHome />;
   if (me.role === 'order_taker') return <TakerHome />;
+  if (me.role === 'stock_keeper') return <KeeperHome />;
   return <CustomerHome />;
 }
 
@@ -35,7 +37,7 @@ function Grid({ children }: { children: React.ReactNode }) {
 // ---------------------------------------------------------------- admin
 function AdminHome() {
   const dash = useRpc<any>('dashboard');
-  const orders = useRpc<OrderRow[]>('orders_list', { p_status: 'pending', p_limit: 5 });
+  const orders = useRpc<OrderRow[]>('orders_list', { p_status: 'confirmed', p_limit: 5 });
   const pays = useRpc<PaymentRow[]>('payments_list', { p_status: 'pending', p_limit: 5 });
   const team = useRpc<TeamRow[]>('team_locations');
   const d = dash.data;
@@ -48,14 +50,29 @@ function AdminHome() {
 
   return (
     <Screen title="Scorpion Chemical" subtitle="Admin" top onRefresh={refresh} refreshing={dash.refreshing}>
+      <View style={{ flexDirection: 'row', gap: S.md }}>
+        <Btn title="Take an order" icon="cart-outline" onPress={() => router.push('/customers?pick=order')} style={{ flex: 1 }} />
+        <Btn title="Record payment" icon="cash-outline" kind="secondary" onPress={() => router.push('/customers?pick=payment')} style={{ flex: 1 }} />
+      </View>
       {dash.error ? <ErrorBox message={dash.error} onRetry={dash.reload} /> : null}
       {!d && dash.loading ? <Loading /> : null}
       {d ? (
         <>
+          {d.licence_expired > 0 ? (
+            <Card onPress={() => router.push('/customers?filter=licence')} style={{ borderColor: C.red }}>
+              <T v="strong" color={C.red}>{d.licence_expired} {d.licence_expired === 1 ? 'customer has' : 'customers have'} an expired licence</T>
+              <T v="small">Tap to see who.{d.licence_expiring ? ` ${d.licence_expiring} more expire within 30 days.` : ''}</T>
+            </Card>
+          ) : d.licence_expiring > 0 ? (
+            <Card onPress={() => router.push('/customers?filter=licence')} style={{ borderColor: C.amber }}>
+              <T v="strong" color={C.amber}>{d.licence_expiring} {d.licence_expiring === 1 ? 'licence expires' : 'licences expire'} within 30 days</T>
+            </Card>
+          ) : null}
           <Grid>
-            <Stat label="Orders today" value={String(d.today_orders)} sub={money(d.today_sales)} onPress={() => router.push('/orders')} />
-            <Stat label="Sales this month" value={money(d.month_sales)} />
-            <Stat label="Orders to confirm" value={String(d.pending_orders)} tone={d.pending_orders ? 'amber' : undefined} sub={`${d.to_deliver} to deliver`} onPress={() => router.push('/orders?status=pending')} />
+            <Stat label="Orders today" value={String(d.today_orders)} sub={money(d.today_sales)} onPress={() => router.push('/orders?period=today')} />
+            <Stat label="Orders this week" value={String(d.week_orders)} sub={money(d.week_sales)} onPress={() => router.push('/orders?period=week')} />
+            <Stat label="Orders this month" value={String(d.month_orders)} sub={money(d.month_sales)} onPress={() => router.push('/orders?period=month')} />
+            <Stat label="Orders to deliver" value={String(d.to_deliver)} tone={d.to_deliver ? 'amber' : undefined} sub="Loading sheet" onPress={() => router.push('/stock-sheet')} />
             <Stat label="Payments to approve" value={String(d.pending_payments)} tone={d.pending_payments ? 'amber' : undefined} sub={money(d.pending_payments_amount)} onPress={() => router.push('/payments?status=pending')} />
             <Stat label="To receive from customers" value={money(d.total_outstanding)} tone="blue" onPress={() => router.push('/customers')} />
             <Stat label="Overdue" value={money(d.overdue_amount)} tone={d.overdue_orders ? 'red' : undefined} sub={`${d.overdue_orders} ${d.overdue_orders === 1 ? 'order' : 'orders'}`} onPress={() => router.push('/orders?status=overdue')} />
@@ -64,7 +81,7 @@ function AdminHome() {
             <Stat label="Low stock products" value={String(d.low_stock)} tone={d.low_stock ? 'red' : undefined} onPress={() => router.push('/catalog?filter=low')} />
           </Grid>
 
-          <Section title="Orders to confirm" action={<SeeAll href="/orders?status=pending" />}>
+          <Section title="Orders to deliver" action={<SeeAll href="/orders?status=confirmed&period=all" />}>
             {orders.data?.length ? orders.data.map((o) => <OrderCard key={o.id} o={o} showCustomer />) : <Card><T color={C.sub}>No orders are waiting.</T></Card>}
           </Section>
 
@@ -153,6 +170,12 @@ function CustomerHome() {
         </View>
       ) : null}
 
+      {d?.licence_expiry && d.licence_expiry < isoDate(new Date()) ? (
+        <Card style={{ borderColor: C.red }}>
+          <T v="strong" color={C.red}>Your licence expired on {fmtDate(d.licence_expiry)}</T>
+          <T v="small">Please send the renewed licence to Scorpion Chemical.</T>
+        </Card>
+      ) : null}
       <Btn title="Order products" icon="cart-outline" onPress={() => router.push('/catalog')} />
 
       {d ? (
@@ -172,6 +195,16 @@ function CustomerHome() {
           <Empty icon="receipt-outline" title="No orders yet" hint="Your orders will show here after you place one." />
         )}
       </Section>
+    </Screen>
+  );
+}
+
+// ---------------------------------------------------------------- stock keeper
+function KeeperHome() {
+  const me = useMe();
+  return (
+    <Screen title={`Hello, ${me.full_name.split(' ')[0]}`} subtitle="Stock Keeper" top>
+      <StockSheet />
     </Screen>
   );
 }

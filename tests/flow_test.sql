@@ -96,10 +96,12 @@ select public.order_place(null, format('[{"product_id":"%s","qty":10},{"product_
 select t.eq(t.sudo(format('select total from orders where id = %L', :'oa'))::numeric, 825.00, 'order total 10*54 + 4*71.25');
 select t.eq(t.sudo(format('select subtotal from orders where id = %L', :'oa'))::numeric, 900.00, 'order subtotal');
 select t.eq(t.sudo(format('select discount_total from orders where id = %L', :'oa'))::numeric, 75.00, 'order discount total');
-select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p1'))::int, 100, 'stock untouched while pending');
+select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p1'))::int, 90, 'stock taken as soon as the order is placed');
+select t.eq(t.sudo(format('select status from orders where id = %L', :'oa')), 'confirmed', 'order is confirmed when placed');
+select t.eq(t.sudo(format('select order_no from orders where id = %L', :'oa')) like 'INV-%', true, 'invoice number starts with INV-');
 select t.raises(format('select public.order_place(null, %L::jsonb)', '[]'), 'at least one', 'empty order rejected');
 select t.raises(format('select public.order_place(null, %L::jsonb)', format('[{"product_id":"%s","qty":0}]', :'p1')), 'invalid quantity', 'zero qty rejected');
-select t.raises(format('select public.order_set_status(%L, %L)', :'oa', 'confirmed'), 'not allowed', 'store cannot confirm');
+select t.raises(format('select public.order_deliver(%L)', :'oa'), 'not allowed', 'store cannot mark delivered');
 select t.raises(format('select public.customers_list()'), 'not allowed', 'store cannot list customers');
 select t.raises(format('select public.ledger_adjust(%L, 500, %L, %L)', :'ca', 'credit', 'gift'), 'not allowed', 'store cannot adjust ledger');
 
@@ -115,27 +117,27 @@ select t.raises(format('select public.order_place(%L, %L::jsonb)', :'ca', format
 select t.eq(jsonb_array_length(public.customers_list()), 1, 'order taker sees only assigned customers');
 select t.login(:'taker1');
 select t.eq((public.order_get(:'oa')->>'order_no') is not null, true, 'assigned order taker can open order');
-select t.eq((select j->>'stock_qty' from jsonb_array_elements(public.products_list(:'ca')) j where j->>'id' = :'p1'), '100', 'order taker sees stock');
+select t.eq((select j->>'stock_qty' from jsonb_array_elements(public.products_list(:'ca')) j where j->>'id' = :'p1'), '90', 'order taker sees stock');
 
 -- ---------- admin: confirm, stock, deliver, ledger ----------
 select t.login(:'admin');
-select t.eq((public.order_set_status(:'oa', 'confirmed')->>'status'), 'confirmed', 'admin confirms');
-select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p1'))::int, 90, 'stock reduced on confirm');
 select t.eq((public.customer_get(:'ca')->>'balance')::numeric, 1000.00, 'not charged before delivery');
-select t.raises(format('select public.order_update_items(%L, %L::jsonb)', :'oa', format('[{"product_id":"%s","qty":1}]', :'p1')), 'pending', 'confirmed order cannot be edited');
-select t.eq((public.order_set_status(:'oa', 'delivered', current_date + 2)->>'status'), 'delivered', 'admin delivers (skipping dispatched)');
+select t.eq((public.order_deliver(:'oa', current_date + 2)->>'status'), 'delivered', 'admin marks delivered');
 select t.eq((public.customer_get(:'ca')->>'balance')::numeric, 1825.00, 'balance = opening 1000 + order 825');
-select t.raises(format('select public.order_set_status(%L, %L)', :'oa', 'confirmed'), 'already delivered', 'cannot move back');
+select t.raises(format('select public.order_deliver(%L)', :'oa'), 'already delivered', 'cannot deliver twice');
+select t.raises(format('select public.order_update_items(%L, %L::jsonb)', :'oa', format('[{"product_id":"%s","qty":1}]', :'p1')), 'not delivered', 'delivered order cannot be edited');
 select t.raises(format('select public.order_cancel(%L)', :'oa'), 'delivered order cannot', 'delivered cannot be cancelled');
 
 -- not enough stock
 select t.login(:'ua');
-select public.order_place(null, format('[{"product_id":"%s","qty":40}]', :'p3')::jsonb)->>'id' as ob \gset
+select t.raises(format('select public.order_place(null, %L::jsonb)', format('[{"product_id":"%s","qty":40}]', :'p3')), 'Not enough stock', 'order blocked when stock is short');
+select t.eq(t.sudo(format('select count(*) from orders where customer_id = %L', :'ca'))::int, 1, 'blocked order is not saved');
+select public.order_place(null, format('[{"product_id":"%s","qty":10}]', :'p3')::jsonb)->>'id' as ob \gset
 select t.login(:'admin');
-select t.raises(format('select public.order_set_status(%L, %L)', :'ob', 'confirmed'), 'Not enough stock', 'confirm blocked when stock is short');
-select t.eq((public.order_update_items(:'ob', format('[{"product_id":"%s","qty":12}]', :'p3')::jsonb)->>'total')::numeric, 2850.00, 'admin edits pending order (12 x 237.50)');
-select public.order_set_status(:'ob', 'confirmed');
-select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p3'))::int, 3, 'stock after second order');
+select t.raises(format('select public.order_update_items(%L, %L::jsonb)', :'ob', format('[{"product_id":"%s","qty":16}]', :'p3')), 'Not enough stock', 'edit blocked when stock is short');
+select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p3'))::int, 5, 'failed edit leaves stock as it was');
+select t.eq((public.order_update_items(:'ob', format('[{"product_id":"%s","qty":12}]', :'p3')::jsonb)->>'total')::numeric, 2850.00, 'admin edits confirmed order (12 x 237.50)');
+select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p3'))::int, 3, 'stock after edit');
 select t.eq(t.sudo(format('select count(*) from notifications where user_id = %L and kind = %L', :'admin', 'stock'))::int, 1, 'low stock alert');
 select public.order_cancel(:'ob', 'customer changed mind');
 select t.eq(t.sudo(format('select stock_qty from products where id = %L', :'p3'))::int, 15, 'stock restored on cancel');
@@ -205,16 +207,12 @@ select t.login(:'ud');
 select public.order_place(null, format('[{"product_id":"%s","qty":20}]', :'p2')::jsonb)->>'id' as od \gset
 select t.eq(t.sudo(format('select total from orders where id = %L', :'od'))::numeric, 1275.00, 'distributor price 15% off (20 x 63.75)');
 select public.order_cancel(:'od', 'wrong qty');
-select t.eq(t.sudo(format('select status from orders where id = %L', :'od')), 'cancelled', 'customer cancels own pending order');
+select t.eq(t.sudo(format('select status from orders where id = %L', :'od')), 'cancelled', 'customer cancels own order before delivery');
 select public.order_place(null, format('[{"product_id":"%s","qty":10}]', :'p2')::jsonb)->>'id' as od2 \gset
 select t.login(:'admin');
-select public.order_set_status(:'od2', 'confirmed');
+select public.order_deliver(:'od2');
 select t.login(:'ud');
-select t.raises(format('select public.order_cancel(%L)', :'od2'), 'already confirmed', 'customer cannot cancel confirmed order');
-select t.login(:'admin');
-select public.order_set_status(:'od2', 'dispatched');
-select public.order_set_status(:'od2', 'delivered');
-select t.login(:'ud');
+select t.raises(format('select public.order_cancel(%L)', :'od2'), 'Use Return', 'customer cannot cancel a delivered order');
 select t.eq((public.ledger_get()->>'balance')::numeric, 637.50, 'distributor ledger');
 select t.eq((public.dashboard()->>'balance')::numeric, 637.50, 'distributor dashboard balance');
 

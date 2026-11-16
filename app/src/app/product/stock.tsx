@@ -14,7 +14,7 @@ type Data = {
   entries: { id: string; qty: number; kind: string; note: string | null; batch_no: string | null; expiry_date: string | null; created_at: string; by: string | null }[];
 };
 
-const KIND: Record<string, string> = { in: 'Stock received', adjust: 'Correction', order: 'Sold', order_cancel: 'Order cancelled' };
+const KIND: Record<string, string> = { in: 'Stock received', adjust: 'Correction', order: 'Sold', order_cancel: 'Order cancelled', return: 'Returned by customer', opening: 'Stock count' };
 
 export default function Stock() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -85,7 +85,7 @@ export default function Stock() {
             <Field label="Quantity" value={qty} onChangeText={setQty} keyboardType="number-pad" placeholder="0" />
             {kind === 'in' ? (
               <>
-                <Field label="Batch no. (optional)" value={batch} onChangeText={setBatch} autoCapitalize="characters" />
+                <Field label="Lot no. (optional)" value={batch} onChangeText={setBatch} autoCapitalize="characters" />
                 <DateField label="Expiry date (optional)" value={expiry} onChange={setExpiry} presets={[]} />
               </>
             ) : null}
@@ -108,7 +108,7 @@ export default function Stock() {
                       </T>
                       {e.note || e.batch_no || e.expiry_date ? (
                         <T v="small">
-                          {[e.note, e.batch_no ? `Batch ${e.batch_no}` : null, e.expiry_date ? `Expiry ${fmtDate(e.expiry_date)}` : null].filter(Boolean).join(', ')}
+                          {[e.note, e.batch_no ? `Lot ${e.batch_no}` : null, e.expiry_date ? `Expiry ${fmtDate(e.expiry_date)}` : null].filter(Boolean).join(', ')}
                         </T>
                       ) : null}
                     </View>

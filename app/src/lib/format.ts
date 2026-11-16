@@ -104,12 +104,13 @@ export function methodLabel(m: string): string {
 }
 
 export const CUSTOMER_TYPES = [
-  { value: 'store', label: 'Medical store', plural: 'Medical stores' },
+  { value: 'store', label: 'Consumer', plural: 'Consumers' },
   { value: 'distributor', label: 'Distributor', plural: 'Distributors' },
   { value: 'wholesaler', label: 'Wholesaler', plural: 'Wholesalers' },
   { value: 'retailer', label: 'Retailer', plural: 'Retailers' },
   { value: 'clinic', label: 'Clinic', plural: 'Clinics' },
   { value: 'hospital', label: 'Hospital', plural: 'Hospitals' },
+  { value: 'dawakhana', label: 'Dawakhana', plural: 'Dawakhanas' },
 ] as const;
 
 export type CustomerType = (typeof CUSTOMER_TYPES)[number]['value'];
@@ -126,14 +127,15 @@ export function loginRoleFor(t: string): 'distributor' | 'store' {
 export const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
   order_taker: 'Order Taker',
+  stock_keeper: 'Stock Keeper',
   store: 'Customer',
   distributor: 'Distributor',
 };
 
 export const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending',
+  pending: 'Confirmed',
   confirmed: 'Confirmed',
-  dispatched: 'Dispatched',
+  dispatched: 'Confirmed',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
 };
@@ -143,6 +145,27 @@ export const PAYMENT_STATUS_LABEL: Record<string, string> = {
   approved: 'Approved',
   rejected: 'Rejected',
 };
+
+/** Monday of this week, first and last day of this/last month, as ISO dates (Pakistan time on the phone). */
+export function periodRange(p: 'today' | 'week' | 'month' | 'last_month'): { from: string; to: string } {
+  const now = new Date();
+  const today = isoDate(now);
+  if (p === 'today') return { from: today, to: today };
+  if (p === 'week') {
+    const d = new Date(now);
+    const dow = (d.getDay() + 6) % 7; // Monday = 0
+    d.setDate(d.getDate() - dow);
+    return { from: isoDate(d), to: today };
+  }
+  if (p === 'month') return { from: isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: today };
+  const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const last = new Date(now.getFullYear(), now.getMonth(), 0);
+  return { from: isoDate(first), to: isoDate(last) };
+}
+
+export function isOpenStatus(s: string): boolean {
+  return s === 'pending' || s === 'confirmed' || s === 'dispatched';
+}
 
 export function toNumber(text: string): number {
   const v = Number(String(text).replace(/,/g, '').trim());
