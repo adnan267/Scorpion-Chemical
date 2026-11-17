@@ -78,12 +78,12 @@ export function Screen({
     <ScrollView
       style={{ flex: 1 }}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={st.content}
+      contentContainerStyle={[st.content, !wide && !footer && !top && { paddingBottom: S.lg + insets.bottom }]}
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={C.blue} colors={[C.blue]} /> : undefined}>
       <View style={st.inner}>{children}</View>
     </ScrollView>
   ) : (
-    <View style={[st.content, { flex: 1 }]}>
+    <View style={[st.content, { flex: 1 }, !wide && !footer && !top && { paddingBottom: S.lg + insets.bottom }]}>
       <View style={[st.inner, { flex: 1 }]}>{children}</View>
     </View>
   );

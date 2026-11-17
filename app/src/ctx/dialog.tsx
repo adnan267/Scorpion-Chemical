@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -62,6 +63,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     [open, toast]
   );
 
+  const insets = useSafeAreaInsets();
   const needText = !!opts?.input?.required && text.trim() === '';
 
   return (
@@ -86,7 +88,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
         </View>
       </Sheet>
       {note ? (
-        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 84, alignItems: 'center', paddingHorizontal: S.lg }}>
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 84 + insets.bottom, alignItems: 'center', paddingHorizontal: S.lg }}>
           <View style={{ backgroundColor: note.kind === 'error' ? C.red : C.ink, borderRadius: R.input, paddingHorizontal: S.lg, paddingVertical: S.md, maxWidth: 480 }}>
             <T color={C.white} v="strong">{note.message}</T>
           </View>

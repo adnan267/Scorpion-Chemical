@@ -51,11 +51,6 @@ export function StockSheet() {
         company: me.company,
         tables: [
           { heading: 'Take out of the store in total', cols: [{ label: '#', width: '30px' }, { label: 'Product' }, { label: 'Qty', right: true, width: '70px' }, { label: 'Checked', width: '80px', blank: true }], rows: s.totals.map((r, n) => [n + 1, r.product_name, r.qty, '']) },
-          ...s.bookers.map((b) => ({
-            heading: `${b.name}: ${(b.orders ?? []).map((o) => `${o.customer} (${o.order_no})`).join(', ')}`,
-            cols: [{ label: '#', width: '30px' }, { label: 'Product' }, { label: 'Qty', right: true, width: '70px' }],
-            rows: (b.totals ?? []).map((r, n) => [n + 1, r.product_name, r.qty]),
-          })),
         ],
         signLines: ['Taken out by', 'Checked by'],
       }),

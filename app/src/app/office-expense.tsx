@@ -59,7 +59,7 @@ export default function OfficeExpense() {
             return (
               <Pressable key={t.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setCat(t.value)} style={{ flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: R.input, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? C.blueSoft : C.surface }}>
                 <Ionicons name={t.icon} size={20} color={on ? C.blue : C.sub} />
-                <T v={on ? 'strong' : 'body'} color={on ? C.blue : C.ink}>{t.label}</T>
+                <T v={on ? 'strong' : 'body'} color={on ? C.blue : C.ink} style={{ flex: 1 }}>{t.label}</T>
               </Pressable>
             );
           })}

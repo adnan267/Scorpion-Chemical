@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -88,7 +89,7 @@ export function Btn({
       ) : (
         <>
           {icon ? <Ionicons name={icon} size={small ? 16 : 18} color={fg} /> : null}
-          <Text style={{ fontFamily: F.semi, fontSize: small ? 14 : 16, color: fg }}>{title}</Text>
+          <Text style={{ fontFamily: F.semi, fontSize: small ? 14 : 16, color: fg, flexShrink: 1, textAlign: 'center' }}>{title}</Text>
         </>
       )}
     </Pressable>
@@ -451,9 +452,12 @@ export function Stepper({ value, onChange, min = 0, typeMin = 1 }: { value: numb
 // ---------- sheet (bottom sheet on phones, centred box on wide screens) ----------
 export function Sheet({ visible, title, onClose, children, footer }: { visible: boolean; title?: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode }) {
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const wide = width >= WIDE;
+  // phones draw under the system buttons at the bottom, so keep the last rows and buttons above them
+  const bottom = wide ? 0 : insets.bottom;
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <View style={[st.backdrop, wide ? { justifyContent: 'center', alignItems: 'center' } : { justifyContent: 'flex-end' }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
         <View style={[st.sheet, wide ? { width: 460, borderRadius: R.card, maxHeight: height * 0.8 } : { maxHeight: height * 0.85 }]}>
@@ -463,10 +467,10 @@ export function Sheet({ visible, title, onClose, children, footer }: { visible: 
               <IconBtn icon="close" label="Close" onPress={onClose} />
             </View>
           ) : null}
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: S.md }}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: S.md + (footer ? 0 : bottom) }}>
             {children}
           </ScrollView>
-          {footer ? <View style={{ padding: S.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line }}>{footer}</View> : null}
+          {footer ? <View style={{ padding: S.lg, paddingBottom: S.lg + bottom, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line }}>{footer}</View> : null}
         </View>
       </View>
     </Modal>

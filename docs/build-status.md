@@ -20,6 +20,12 @@ Last updated: 16 Nov 2026. Scope is in `v1-scope.md`.
 - **Customer types**: medical store, distributor, wholesaler, retailer, clinic, hospital (0007). Login role is `distributor` for distributors and `store` for every other type.
 - APK run 3 built and sent (18m 55s). Not yet tested on a real phone, including background tracking and battery-saver behaviour on Xiaomi/Oppo/Vivo.
 
+## Version 2.5 (17 Nov 2026, app version 1.5.1, migration 0016_v25.sql applied live)
+
+- "Print loading sheet" prints only the total take-out table (per-booker tables stay on screen, not in print).
+- Cash payments only by admin and order takers (form and database); customers, distributors and stock keepers get Bank Transfer, JazzCash, EasyPaisa, Other. Note: the owner sometimes says "booker" for the medical-store (customer) app, whose button is "Send payment".
+- Android layout: bottom sheets, dialogs, toasts and the end of every page stay above the phone's system buttons (safe-area bottom inset; modals drawn edge to edge); long labels in expense tiles and buttons wrap inside their box.
+
 ## Version 2.4 (16 Nov 2026 evening, app version 1.5.0, migration 0015_v24.sql applied live)
 
 From the owner's voice notes after using 1.4.0:
